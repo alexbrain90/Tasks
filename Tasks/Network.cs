@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Net;
 using System.Net.Sockets;
 
@@ -196,7 +196,7 @@ namespace Tasks
             try
             {
                 TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                byte[] data = StringToByte(Program.user_ID.ToString());
+                byte[] data = StringToByte(Program.user_ConID.ToString());
                 data = ByteAdd(data, HashToByte(oldP));
                 data = ByteAdd(data, HashToByte(newP));
 

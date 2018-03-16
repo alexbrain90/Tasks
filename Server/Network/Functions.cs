@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Net.Sockets;
 using System.Threading;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ namespace Tasks_Server
     {
         private bool CheckVersion(string version)
         {
-            string[] list = new string[] { "0.8.0.36"};
+            string[] list = new string[] { "0.8.1.37"};
             for (int i = 0; i < list.Length; i++)
             {
                 if (list[i] == version)
@@ -64,6 +64,7 @@ namespace Tasks_Server
                 {
                     data = StringToByte("202");
                     data = ByteAdd(data, StringToByte(Auth_New((int)sql[0]).ToString()));
+                    data = ByteAdd(data, StringToByte(((int)sql[0]).ToString()));
                     SendMessage(tcp, data);
                     return;
                 }
@@ -134,7 +135,7 @@ namespace Tasks_Server
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
 
-            long id = Convert.ToInt32(ByteToString(data)); data = ByteCut(data);
+            long id = Convert.ToInt64(ByteToString(data)); data = ByteCut(data);
             string oldP = ByteToString(data); data = ByteCut(data);
             string newP = ByteToString(data); data = ByteCut(data);
 

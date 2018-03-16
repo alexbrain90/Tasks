@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows.Forms;
 
 namespace Tasks
@@ -26,6 +26,7 @@ namespace Tasks
 
             clearReports();
             Application.Run(new Forms.Main());
+            Network.User_Exit();
             clearReports();
         }
         static private void clearReports()
@@ -55,7 +56,7 @@ namespace Tasks
 
             try
             {
-                System.IO.StreamWriter sw = new System.IO.StreamWriter("Tasks-" + DateTime.Now.Year.ToString("0000") + DateTime.Now.Month.ToString("00") + DateTime.Now.Minute.ToString("00") + DateTime.Now.Hour.ToString("00") + DateTime.Now.Minute.ToString("00") + DateTime.Now.Second.ToString("00") + DateTime.Now.Millisecond.ToString("000") + ".dump", false, System.Text.Encoding.UTF8);
+                System.IO.StreamWriter sw = new System.IO.StreamWriter("Tasks-" + DateTime.Now.Year.ToString("0000") + DateTime.Now.Month.ToString("00") +  DateTime.Now.Day.ToString("00") + DateTime.Now.Hour.ToString("00") + DateTime.Now.Minute.ToString("00") + DateTime.Now.Second.ToString("00") + DateTime.Now.Millisecond.ToString("000") + ".dump", false, System.Text.Encoding.UTF8);
                 sw.WriteLine(ex.Message);
                 sw.WriteLine(ex.Source);
                 sw.WriteLine(ex.StackTrace);

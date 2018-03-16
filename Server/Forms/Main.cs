@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows.Forms;
 
 namespace Tasks_Server.Forms
@@ -36,7 +36,7 @@ namespace Tasks_Server.Forms
             lb_Con.BeginUpdate();
             lb_Con.Items.Clear();
             DateTime dt;
-            for(int i =0; i < Program.net.c_List.Count; i++)
+            for(int i = 0; i < Program.net.c_List.Count; i++)
             {
                 dt = new DateTime(Program.net.c_List[i].LastConnect);
                 lb_Con.Items.Add(dt.Year.ToString() + "." + dt.Month.ToString("00") + "." + dt.Day.ToString("00") + " - " + dt.Hour.ToString("00") + ":" + dt.Minute.ToString("00") + ":" + dt.Second.ToString("00") + "\t" + Program.net.c_List[i].UserId.ToString());
