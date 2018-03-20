@@ -49,7 +49,7 @@ namespace Tasks
             try
             {
                 WebClient wc = new WebClient();
-                wc.UploadFile("http://" + Program.ServerName + ":8080/Tasks/", fileName);
+                wc.UploadFile("http://" + Config.ServerName + ":8080/Tasks/", fileName);
                 return true;
             }
             catch (Exception ex)
@@ -108,14 +108,21 @@ namespace Tasks
         #endregion
 
         #region Authentification
+        /// <summary>
+        /// Authentification on server with selected username and password.
+        /// Returns: -1 - error; 0 - wrong username or password; 1 - succesfull; 2 - must change password; 3 - must update application.
+        /// </summary>
+        /// <param name="Name">Username</param>
+        /// <param name="Password">Password</param>
+        /// <returns>Message code</returns>
         static public int User_Auth(string Name, string Password)
         {
             try
             {
-                TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
+                TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
                 byte[] data = StringToByte(Name);
                 data = ByteAdd(data, HashToByte(Password));
-                data = ByteAdd(data, StringToByte(Program.CurrentVersion));
+                data = ByteAdd(data, StringToByte(Config.CurrentVersion));
 
                 SendMessage(tcp, new byte[] { 0, 0 }, data);
 
@@ -124,9 +131,10 @@ namespace Tasks
                 string result = ByteToString(data); data = ByteCut(data);
                 if (result == "200" || result == "202")
                 {
-                    Program.user_ConID = Convert.ToInt64(ByteToString(data)); data = ByteCut(data);
-                    Program.user_ID = Convert.ToInt32(ByteToString(data));
-                    Program.user_IDMain = Program.user_ID;
+                    Tray.SetStatusNormal();
+                    Config.user_ConID = Convert.ToInt64(ByteToString(data)); data = ByteCut(data);
+                    Config.user_ID = Convert.ToInt32(ByteToString(data));
+                    Config.user_IDMain = Config.user_ID;
                     if (result == "200")
                         return 1;
                     else
@@ -155,8 +163,8 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                    SendMessage(tcp, new byte[] { 0, 2 }, StringToByte(Program.user_ConID.ToString()));
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                    SendMessage(tcp, new byte[] { 0, 2 }, StringToByte(Config.user_ConID.ToString()));
 
                     byte[] data = RecieveMessage(tcp);
 
@@ -170,14 +178,14 @@ namespace Tasks
                     else if (ByteToString(data) == "100")
                     {
                         data = ByteCut(data);
-                        Program.user_Fio = ByteToString(data); data = ByteCut(data);
-                        Program.user_Sbe = ByteToString(data); data = ByteCut(data);
-                        Program.user_Post = ByteToString(data); data = ByteCut(data);
+                        Config.user_Fio = ByteToString(data); data = ByteCut(data);
+                        Config.user_Sbe = ByteToString(data); data = ByteCut(data);
+                        Config.user_Post = ByteToString(data); data = ByteCut(data);
                         string tmp = ByteToString(data);
                         if (tmp == "true")
-                            Program.user_Manager = true;
+                            Config.user_Manager = true;
                         else
-                            Program.user_Manager = false;
+                            Config.user_Manager = false;
                         result = true;
                         break;
                     }
@@ -195,8 +203,8 @@ namespace Tasks
         {
             try
             {
-                TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                byte[] data = StringToByte(Program.user_ConID.ToString());
+                TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                byte[] data = StringToByte(Config.user_ConID.ToString());
                 data = ByteAdd(data, HashToByte(oldP));
                 data = ByteAdd(data, HashToByte(newP));
 
@@ -220,8 +228,8 @@ namespace Tasks
 
             try
             {
-                TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                SendMessage(tcp, new byte[] { 0, 3 }, StringToByte(Program.user_ConID.ToString()));
+                TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                SendMessage(tcp, new byte[] { 0, 3 }, StringToByte(Config.user_ConID.ToString()));
 
                 byte[] data = RecieveMessage(tcp);
             }
@@ -230,14 +238,24 @@ namespace Tasks
     
         static private bool User_ReAuth()
         {
+            Tray.SetStatusError();
+
             flag_Reconnect = true;
-            Tasks.Forms.Messages.ReAuth form = new Forms.Messages.ReAuth();
+
+            Config.user_ConID = -1;
+            while (Config.user_ConID == -1 && Program.isExiting == false)
+            {
+                System.Threading.Thread.Sleep(10);
+                System.Windows.Forms.Application.DoEvents();
+            }
+
+            /*Tasks.Forms.Messages.ReAuth form = new Forms.Messages.ReAuth();
             System.Windows.Forms.DialogResult dr = form.ShowDialog();
             if (dr == System.Windows.Forms.DialogResult.Cancel)
             {
                 System.Windows.Forms.Application.Exit();
                 return false;
-            }
+            }*/
             flag_Reconnect = false;
             return true;
         }
@@ -263,8 +281,8 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                    byte[] data = StringToByte(Program.user_ConID.ToString());
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                    byte[] data = StringToByte(Config.user_ConID.ToString());
                     data = ByteAdd(data, StringToByte(status.ToString()));
                     data = ByteAdd(data, StringToByte(filterB.ToString()));
                     data = ByteAdd(data, StringToByte(filterE.ToString()));
@@ -308,8 +326,8 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                    byte[] data = StringToByte(Program.user_ConID.ToString());
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                    byte[] data = StringToByte(Config.user_ConID.ToString());
                     data = ByteAdd(data, StringToByte(id.ToString()));
                     SendMessage(tcp, new byte[] { 2, 1 }, data);
 
@@ -348,8 +366,8 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                    byte[] data = StringToByte(Program.user_ConID.ToString());
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                    byte[] data = StringToByte(Config.user_ConID.ToString());
                     data = ByteAdd(data, StringToByte(name));
                     data = ByteAdd(data, StringToByte(desc));
                     data = ByteAdd(data, StringToByte(ds.ToString()));
@@ -391,8 +409,8 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                    byte[] data = StringToByte(Program.user_ConID.ToString());
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                    byte[] data = StringToByte(Config.user_ConID.ToString());
                     data = ByteAdd(data, StringToByte(taskID.ToString()));
                     data = ByteAdd(data, StringToByte(name));
                     data = ByteAdd(data, StringToByte(desc));
@@ -439,8 +457,8 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                    byte[] data = StringToByte(Program.user_ConID.ToString());
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                    byte[] data = StringToByte(Config.user_ConID.ToString());
                     data = ByteAdd(data, StringToByte(id.ToString()));
                     SendMessage(tcp, new byte[] { 2, 4 }, data);
 
@@ -479,8 +497,8 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                    byte[] data = StringToByte(Program.user_ConID.ToString());
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                    byte[] data = StringToByte(Config.user_ConID.ToString());
                     data = ByteAdd(data, StringToByte(date1.ToString()));
                     data = ByteAdd(data, StringToByte(date2.ToString()));
 
@@ -525,8 +543,8 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                    byte[] data = StringToByte(Program.user_ConID.ToString());
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                    byte[] data = StringToByte(Config.user_ConID.ToString());
                     data = ByteAdd(data, StringToByte(date1.ToString()));
                     data = ByteAdd(data, StringToByte(date2.ToString()));
 
@@ -574,9 +592,9 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
 
-                    SendMessage(tcp, new byte[] { 1, 0 }, StringToByte(Program.user_ConID.ToString()));
+                    SendMessage(tcp, new byte[] { 1, 0 }, StringToByte(Config.user_ConID.ToString()));
                     byte[] data = RecieveMessage(tcp);
 
                     if (ByteToString(data) == "201")
@@ -614,10 +632,10 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
 
-                    byte[] data = StringToByte(Program.user_ConID.ToString());
-                    data = ByteAdd(data, StringToByte(Program.user_ID.ToString()));
+                    byte[] data = StringToByte(Config.user_ConID.ToString());
+                    data = ByteAdd(data, StringToByte(Config.user_ID.ToString()));
                     data = ByteAdd(data, StringToByte(UserID.ToString()));
                     SendMessage(tcp, new byte[] { 1, 1 }, data);
                     data = RecieveMessage(tcp);
@@ -656,8 +674,8 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                    byte[] data = StringToByte(Program.user_ConID.ToString());
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                    byte[] data = StringToByte(Config.user_ConID.ToString());
                     data = ByteAdd(data, StringToByte(id.ToString()));
                     SendMessage(tcp, new byte[] { 3, 0 }, data);
 
@@ -700,8 +718,8 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                    byte[] data = StringToByte(Program.user_ConID.ToString());
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                    byte[] data = StringToByte(Config.user_ConID.ToString());
                     data = ByteAdd(data, StringToByte(id.ToString()));
                     SendMessage(tcp, new byte[] { 3, 1 }, data);
 
@@ -747,8 +765,8 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                    byte[] data = StringToByte(Program.user_ConID.ToString());
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                    byte[] data = StringToByte(Config.user_ConID.ToString());
                     data = ByteAdd(data, StringToByte(id.ToString()));
                     data = ByteAdd(data, StringToByte(name));
                     SendMessage(tcp, new byte[] { 3, 2 }, data);
@@ -794,8 +812,8 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                    byte[] data = StringToByte(Program.user_ConID.ToString());
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                    byte[] data = StringToByte(Config.user_ConID.ToString());
                     data = ByteAdd(data, StringToByte(id.ToString()));
                     data = ByteAdd(data, StringToByte(name));
                     SendMessage(tcp, new byte[] { 3, 3 }, data);
@@ -840,8 +858,8 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                    byte[] data = StringToByte(Program.user_ConID.ToString());
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                    byte[] data = StringToByte(Config.user_ConID.ToString());
                     data = ByteAdd(data, StringToByte(id.ToString()));
                     SendMessage(tcp, new byte[] { 3, 4 }, data);
 
@@ -883,8 +901,8 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                    byte[] data = StringToByte(Program.user_ConID.ToString());
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                    byte[] data = StringToByte(Config.user_ConID.ToString());
                     data = ByteAdd(data, StringToByte(id.ToString()));
                     SendMessage(tcp, new byte[] { 4, 0 }, data);
 
@@ -925,8 +943,8 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                    byte[] data = StringToByte(Program.user_ConID.ToString());
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                    byte[] data = StringToByte(Config.user_ConID.ToString());
                     data = ByteAdd(data, StringToByte(id.ToString()));
                     data = ByteAdd(data, StringToByte(message));
                     SendMessage(tcp, new byte[] { 4, 1 }, data);
@@ -968,8 +986,8 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                    byte[] data = StringToByte(Program.user_ConID.ToString());
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                    byte[] data = StringToByte(Config.user_ConID.ToString());
                     data = ByteAdd(data, StringToByte(id.ToString()));
                     SendMessage(tcp, new byte[] { 5, 0 }, data);
 
@@ -1009,8 +1027,8 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                    byte[] data = StringToByte(Program.user_ConID.ToString());
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                    byte[] data = StringToByte(Config.user_ConID.ToString());
                     data = ByteAdd(data, StringToByte(id.ToString()));
                     data = ByteAdd(data, StringToByte(filter));
                     SendMessage(tcp, new byte[] { 5, 1 }, data);
@@ -1051,8 +1069,8 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                    byte[] data = StringToByte(Program.user_ConID.ToString());
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                    byte[] data = StringToByte(Config.user_ConID.ToString());
                     data = ByteAdd(data, StringToByte(idT.ToString()));
                     data = ByteAdd(data, StringToByte(idU.ToString()));
                     SendMessage(tcp, new byte[] { 5, 2 }, data);
@@ -1091,8 +1109,8 @@ namespace Tasks
             {
                 try
                 {
-                    TcpClient tcp = new TcpClient(Program.ServerName, Program.ServerPort);
-                byte[] data = StringToByte(Program.user_ConID.ToString());
+                    TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                byte[] data = StringToByte(Config.user_ConID.ToString());
                 data = ByteAdd(data, StringToByte(idT.ToString()));
                 data = ByteAdd(data, StringToByte(idU.ToString()));
                 SendMessage(tcp, new byte[] { 5, 3 }, data);

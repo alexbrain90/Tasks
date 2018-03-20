@@ -12,22 +12,22 @@ namespace Tasks.Forms
             manager.ShowDialog();
             if (manager.DialogResult == DialogResult.Yes && Network.Manager_Change(manager.SelectedUserId) == true)
             {
-                Program.flag_ReadOnly = true;
-                Program.user_ID = manager.SelectedUserId;
-                Program.user_Name = manager.SelectedUserName;
+                Config.flag_ReadOnly = true;
+                Config.user_ID = manager.SelectedUserId;
+                Config.user_Name = manager.SelectedUserName;
 
                 this.Main_Shown(Sender, e);
             }
         }
         private void m_Main_User_Back(object Sender, EventArgs e)
         {
-            if (Program.flag_ReadOnly == true && Network.Manager_Change(Program.user_IDMain) == true)
+            if (Config.flag_ReadOnly == true && Network.Manager_Change(Config.user_IDMain) == true)
             {
-                Program.user_ID = Program.user_IDMain;
-                Program.user_Name = Program.user_NameMain;
+                Config.user_ID = Config.user_IDMain;
+                Config.user_Name = Config.user_NameMain;
 
                 this.Main_Shown(Sender, e);
-                Program.flag_ReadOnly = false;
+                Config.flag_ReadOnly = false;
 
                 b_AddTask.Enabled = true;
                 m_Main.MenuItems[1].MenuItems[0].Enabled = true;
@@ -36,7 +36,7 @@ namespace Tasks.Forms
         }
         private void m_Main_User_ChangePassword(object Sender, EventArgs e)
         {
-            new ChangePassword(Program.user_Name).ShowDialog();
+            new ChangePassword(Config.user_Name).ShowDialog();
         }
         private void m_Main_User_Exit(object Sender, EventArgs e)
         {
@@ -74,8 +74,8 @@ namespace Tasks.Forms
 
             sortId = 0;
 
-            Program.ConfigFile.Write("MainForm", "Sort", "0");
-            Program.ConfigFile.Save();
+            Config.ConfigFile.Write("MainForm", "Sort", "0");
+            Config.ConfigFile.Save();
 
             getTasksList();
         }
@@ -86,8 +86,8 @@ namespace Tasks.Forms
 
             sortId = 1;
 
-            Program.ConfigFile.Write("MainForm", "Sort", "1");
-            Program.ConfigFile.Save();
+            Config.ConfigFile.Write("MainForm", "Sort", "1");
+            Config.ConfigFile.Save();
 
             getTasksList();
         }
@@ -98,8 +98,8 @@ namespace Tasks.Forms
 
             sortId = 2;
 
-            Program.ConfigFile.Write("MainForm", "Sort", "2");
-            Program.ConfigFile.Save();
+            Config.ConfigFile.Write("MainForm", "Sort", "2");
+            Config.ConfigFile.Save();
 
             getTasksList();
         }
@@ -110,8 +110,8 @@ namespace Tasks.Forms
 
             sortId = 3;
 
-            Program.ConfigFile.Write("MainForm", "Sort", "3");
-            Program.ConfigFile.Save();
+            Config.ConfigFile.Write("MainForm", "Sort", "3");
+            Config.ConfigFile.Save();
 
             getTasksList();
         }
@@ -167,8 +167,8 @@ namespace Tasks.Forms
             filterB = 0;
             filterE = 0;
 
-            Program.ConfigFile.Write("MainForm", "FilterDate", "0");
-            Program.ConfigFile.Save();
+            Config.ConfigFile.Write("MainForm", "FilterDate", "0");
+            Config.ConfigFile.Save();
 
             l_SortInfo.Text = m_Main_Filter_String();
             getTasksList();
@@ -187,8 +187,8 @@ namespace Tasks.Forms
             tmp = tmp.AddDays(7);
             filterE = tmp.Ticks - 1;
 
-            Program.ConfigFile.Write("MainForm", "FilterDate", "2");
-            Program.ConfigFile.Save();
+            Config.ConfigFile.Write("MainForm", "FilterDate", "2");
+            Config.ConfigFile.Save();
 
             l_SortInfo.Text = m_Main_Filter_String();
             getTasksList();
@@ -206,8 +206,8 @@ namespace Tasks.Forms
             tmp = tmp.AddDays(7);
             filterE = tmp.Ticks - 1;
 
-            Program.ConfigFile.Write("MainForm", "FilterDate", "3");
-            Program.ConfigFile.Save();
+            Config.ConfigFile.Write("MainForm", "FilterDate", "3");
+            Config.ConfigFile.Save();
 
             l_SortInfo.Text = m_Main_Filter_String();
             getTasksList();
@@ -226,8 +226,8 @@ namespace Tasks.Forms
             tmp = tmp.AddDays(7);
             filterE = tmp.Ticks - 1;
 
-            Program.ConfigFile.Write("MainForm", "FilterDate", "4");
-            Program.ConfigFile.Save();
+            Config.ConfigFile.Write("MainForm", "FilterDate", "4");
+            Config.ConfigFile.Save();
 
             l_SortInfo.Text = m_Main_Filter_String();
             getTasksList();
@@ -246,8 +246,8 @@ namespace Tasks.Forms
             tmp = tmp.AddMonths(1);
             filterE = tmp.Ticks - 1;
 
-            Program.ConfigFile.Write("MainForm", "FilterDate", "6");
-            Program.ConfigFile.Save();
+            Config.ConfigFile.Write("MainForm", "FilterDate", "6");
+            Config.ConfigFile.Save();
 
             l_SortInfo.Text = m_Main_Filter_String();
             getTasksList();
@@ -265,8 +265,8 @@ namespace Tasks.Forms
             tmp = tmp.AddMonths(1);
             filterE = tmp.Ticks - 1;
 
-            Program.ConfigFile.Write("MainForm", "FilterDate", "7");
-            Program.ConfigFile.Save();
+            Config.ConfigFile.Write("MainForm", "FilterDate", "7");
+            Config.ConfigFile.Save();
 
             l_SortInfo.Text = m_Main_Filter_String();
             getTasksList();
@@ -285,8 +285,8 @@ namespace Tasks.Forms
             tmp = tmp.AddMonths(1);
             filterE = tmp.Ticks - 1;
 
-            Program.ConfigFile.Write("MainForm", "FilterDate", "8");
-            Program.ConfigFile.Save();
+            Config.ConfigFile.Write("MainForm", "FilterDate", "8");
+            Config.ConfigFile.Save();
 
             l_SortInfo.Text = m_Main_Filter_String();
             getTasksList();
@@ -311,8 +311,8 @@ namespace Tasks.Forms
 
             filterStatus = 0;
 
-            Program.ConfigFile.Write("MainForm", "FilterStatus", "0");
-            Program.ConfigFile.Save();
+            Config.ConfigFile.Write("MainForm", "FilterStatus", "0");
+            Config.ConfigFile.Save();
 
             l_SortInfo.Text = m_Main_Filter_String();
             getTasksList();
@@ -324,8 +324,8 @@ namespace Tasks.Forms
 
             filterStatus = 1;
 
-            Program.ConfigFile.Write("MainForm", "FilterStatus", "1");
-            Program.ConfigFile.Save();
+            Config.ConfigFile.Write("MainForm", "FilterStatus", "1");
+            Config.ConfigFile.Save();
 
             l_SortInfo.Text = m_Main_Filter_String();
             getTasksList();
@@ -337,8 +337,8 @@ namespace Tasks.Forms
 
             filterStatus = 2;
 
-            Program.ConfigFile.Write("MainForm", "FilterStatus", "2");
-            Program.ConfigFile.Save();
+            Config.ConfigFile.Write("MainForm", "FilterStatus", "2");
+            Config.ConfigFile.Save();
 
             l_SortInfo.Text = m_Main_Filter_String();
             getTasksList();

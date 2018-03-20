@@ -70,9 +70,8 @@ namespace Tasks_Server.Forms
 
         private void Log_LogEvent(LogEventArgs e)
         {
-            if (e.error == true || e.text.StartsWith("Успешная авторизация"))
+            if (e.error == true || e.text.StartsWith("Успешная авторизация") || e.text.StartsWith("Выход из программы"))
             {
-
                 string tmp = e.dateTime.Year.ToString("0000") + "." + e.dateTime.Month.ToString("00") + "." + e.dateTime.Day.ToString("00") + " - " + e.dateTime.Hour.ToString("00") + ":" + e.dateTime.Minute.ToString("00") + ":" + e.dateTime.Second.ToString("00") + "." + e.dateTime.Millisecond.ToString("000");
                 if (e.error == true)
                     tmp += " ###\t";

@@ -254,27 +254,27 @@ namespace Tasks.Forms
 
             try
             {
-                this.Left = Convert.ToInt32(Program.ConfigFile.Read("MainForm", "LocationX"));
-                this.Top = Convert.ToInt32(Program.ConfigFile.Read("MainForm", "LocationY"));
-                this.Width = Convert.ToInt32(Program.ConfigFile.Read("MainForm", "SizeX"));
-                this.Height = Convert.ToInt32(Program.ConfigFile.Read("MainForm", "SizeY"));
-                if (Program.ConfigFile.Read("MainForm", "Maximized") == "true")
+                this.Left = Convert.ToInt32(Config.ConfigFile.Read("MainForm", "LocationX"));
+                this.Top = Convert.ToInt32(Config.ConfigFile.Read("MainForm", "LocationY"));
+                this.Width = Convert.ToInt32(Config.ConfigFile.Read("MainForm", "SizeX"));
+                this.Height = Convert.ToInt32(Config.ConfigFile.Read("MainForm", "SizeY"));
+                if (Config.ConfigFile.Read("MainForm", "Maximized") == "true")
                     this.WindowState = FormWindowState.Maximized;
                 else
                     this.WindowState = FormWindowState.Normal;
             }
             catch
             {
-                Program.ConfigFile.Write("MainForm", "Maximized", "false");
-                Program.ConfigFile.Write("MainForm", "LocationX", this.Left.ToString());
-                Program.ConfigFile.Write("MainForm", "LocationY", this.Top.ToString());
-                Program.ConfigFile.Write("MainForm", "SizeX", this.Width.ToString());
-                Program.ConfigFile.Write("MainForm", "SizeY", this.Height.ToString());
+                Config.ConfigFile.Write("MainForm", "Maximized", "false");
+                Config.ConfigFile.Write("MainForm", "LocationX", this.Left.ToString());
+                Config.ConfigFile.Write("MainForm", "LocationY", this.Top.ToString());
+                Config.ConfigFile.Write("MainForm", "SizeX", this.Width.ToString());
+                Config.ConfigFile.Write("MainForm", "SizeY", this.Height.ToString());
             }
             this.Main_Resize(this, new EventArgs());
 
             t_UpdateTasks = new System.Windows.Forms.Timer();
-            t_UpdateTasks.Interval = 30000;
+            t_UpdateTasks.Interval = 15000;
             t_UpdateTasks.Tick += t_UpdateTasks_Tick;
         }
 
@@ -589,39 +589,28 @@ namespace Tasks.Forms
 
             this.OnPaint(new PaintEventArgs(this.CreateGraphics(), this.ClientRectangle));
             lb_Progress.Refresh();
+
+            Config.form_Main_Maximized = this.WindowState == FormWindowState.Maximized ? true : false;
         }
         private void Main_Shown(object sender, EventArgs e)
         {
-            if (Program.flag_ReadOnly == false)
-            {
-                Forms.Login f_Login = new Login();
-                f_Login.ShowDialog();
-                if (f_Login.DialogResult == DialogResult.Cancel)
-                {
-                    Application.Exit();
-                    return;
-                }
-
-                new Thread(checkUpdates).Start();
-            }
-
             if (Network.User_Info() == true)
             {
-                this.Text = Program.user_Fio + " - " + Program.user_Post + " - " + Program.user_Sbe;
-                l_Worker.Text = Program.user_Name;
-                l_Post.Text = Program.user_Post;
-                l_Sbe.Text = Program.user_Sbe;
+                this.Text = Config.user_Fio + " - " + Config.user_Post + " - " + Config.user_Sbe;
+                l_Worker.Text = Config.user_Name;
+                l_Post.Text = Config.user_Post;
+                l_Sbe.Text = Config.user_Sbe;
             }
 
-            b_AddTask.Enabled = !Program.flag_ReadOnly;
-            m_Main.MenuItems[1].MenuItems[0].Enabled = !Program.flag_ReadOnly;
-            m_Main.MenuItems[1].MenuItems[1].Enabled = !Program.flag_ReadOnly;
+            b_AddTask.Enabled = !Config.flag_ReadOnly;
+            m_Main.MenuItems[1].MenuItems[0].Enabled = !Config.flag_ReadOnly;
+            m_Main.MenuItems[1].MenuItems[1].Enabled = !Config.flag_ReadOnly;
 
             //getTasksList();
 
             t_UpdateTasks.Enabled = true;
 
-            switch(Program.ConfigFile.Read("MainForm", "Sort", "0"))
+            switch(Config.ConfigFile.Read("MainForm", "Sort", "0"))
             {
                 case "0":
                     m_Main_Sort_Name(sender, e);
@@ -636,7 +625,7 @@ namespace Tasks.Forms
                     m_Main_Sort_DateEnd(sender, e);
                     break;
             }
-            switch (Program.ConfigFile.Read("MainForm", "FilterDate", "0"))
+            switch (Config.ConfigFile.Read("MainForm", "FilterDate", "0"))
             {
                 case "0":
                     m_Main_Filter_No(sender, e);
@@ -662,7 +651,7 @@ namespace Tasks.Forms
                     m_Main_Filter_NextMonth(sender, e);
                     break;
             }
-            switch (Program.ConfigFile.Read("MainForm", "FilterStatus", "1"))
+            switch (Config.ConfigFile.Read("MainForm", "FilterStatus", "1"))
             {
                 case "0":
                     m_Main_Filter_All(sender, e);
@@ -677,18 +666,20 @@ namespace Tasks.Forms
         }
         private void Main_FormClosing(object sender, FormClosingEventArgs e)
         {
+            t_UpdateTasks.Enabled = false;
+
             if (this.WindowState == FormWindowState.Maximized)
-                Program.ConfigFile.Write("MainForm", "Maximized", "true");
+                Config.ConfigFile.Write("MainForm", "Maximized", "true");
             else if (this.WindowState == FormWindowState.Normal)
             {
-                Program.ConfigFile.Write("MainForm", "Maximized", "false");
-                Program.ConfigFile.Write("MainForm", "LocationX", this.Left.ToString());
-                Program.ConfigFile.Write("MainForm", "LocationY", this.Top.ToString());
-                Program.ConfigFile.Write("MainForm", "SizeX", this.Width.ToString());
-                Program.ConfigFile.Write("MainForm", "SizeY", this.Height.ToString());
+                Config.ConfigFile.Write("MainForm", "Maximized", "false");
+                Config.ConfigFile.Write("MainForm", "LocationX", this.Left.ToString());
+                Config.ConfigFile.Write("MainForm", "LocationY", this.Top.ToString());
+                Config.ConfigFile.Write("MainForm", "SizeX", this.Width.ToString());
+                Config.ConfigFile.Write("MainForm", "SizeY", this.Height.ToString());
             }
 
-            Program.ConfigFile.Save();
+            Config.ConfigFile.Save();
         }
         private void setElementsVisible(bool Value)
         {
@@ -702,58 +693,9 @@ namespace Tasks.Forms
             l_MessagesInfo.Visible = Value; tb_Messages.Visible = Value; tb_NewMessage.Visible = Value; b_SendMessage.Visible = Value;
         }
 
-        private void checkUpdates()
-        {
-            try
-            {
-                m_Main.MenuItems[2].Enabled = false;
-                l_Updates.Text = "Проверка библиотек...";
-                Thread.Sleep(2500);
-
-                if (Tasks.Update.checkFiles() == false)
-                {
-                    l_Updates.Text = "Загрузка библиотек...";
-                    if (Tasks.Update.downloadFiles() == true)
-                    {
-                        m_Main.MenuItems[2].Enabled = true;
-                        l_Updates.Text = "Библиотеки загружены";
-                    }
-                    else
-                        l_Updates.Text = "Не удалось загрузить библиотеки";
-                }
-                else
-                    m_Main.MenuItems[2].Enabled = true;
-
-                Thread.Sleep(2500);
-                l_Updates.Text = Language.Main_UpdateCheck;
-                Thread.Sleep(2500);
-                Tasks.Update.checkUpgrade();
-
-                if (Program.CurrentVersion != Program.ServerVersion)
-                {
-                    l_Updates.Text = Language.Main_UpdateExist;
-                    l_Updates.Font = new Font(l_Updates.Font, FontStyle.Underline);
-                    l_Updates.ForeColor = Color.DarkRed;
-                    l_Updates.Cursor = Cursors.Hand;
-                    l_Updates.Click += l_Updates_Click;
-                }
-                else
-                {
-                    l_Updates.Text = Language.Main_UpdateNo;
-                    l_Updates.ForeColor = Color.DarkGray;
-
-                    Thread.Sleep(10000);
-                    l_Updates.Visible = false;
-                }
-            }
-            catch { }
-        }
         private void l_Updates_Click(object sender, EventArgs e)
         {
-            DialogResult dr = new Tasks.Forms.Update().ShowDialog();
-            if (dr == DialogResult.Yes)
-                if (Tasks.Update.makeUpgrade(new string[0]) == true)
-                    Application.Exit();
+            
         }
         private void l_Updates_TextChanged(object sender, EventArgs e)
         {
@@ -867,11 +809,11 @@ namespace Tasks.Forms
             {
                 int p = (int)(n * 100 / StepsID.Length);
                 l_PregressInfo.Text = "Процент выполнения задачи: " + p.ToString() + "%";
-                b_EditStep.Enabled = !Program.flag_ReadOnly;
-                b_DoStep.Enabled = !Program.flag_ReadOnly;
+                b_EditStep.Enabled = !Config.flag_ReadOnly;
+                b_DoStep.Enabled = !Config.flag_ReadOnly;
 
                 if (p == 100 && list[6] == "0")
-                    b_DoTask.Enabled = !Program.flag_ReadOnly;
+                    b_DoTask.Enabled = !Config.flag_ReadOnly;
                 else
                     b_DoTask.Enabled = false;
             }
@@ -882,7 +824,7 @@ namespace Tasks.Forms
                 b_DoStep.Enabled = false;
 
                 if (list[6] == "0")
-                    b_DoTask.Enabled = !Program.flag_ReadOnly;
+                    b_DoTask.Enabled = !Config.flag_ReadOnly;
                 else
                     b_DoTask.Enabled = false;
             }
@@ -907,21 +849,21 @@ namespace Tasks.Forms
 
             CurrentID = id;
             setElementsVisible(true);
-            b_FilesShow.Enabled = !Program.flag_ReadOnly;
+            b_FilesShow.Enabled = !Config.flag_ReadOnly;
             b_CoopShow.Enabled = true;
-            b_AddStep.Enabled = !Program.flag_ReadOnly;
+            b_AddStep.Enabled = !Config.flag_ReadOnly;
 
             HaveChanges = false;
             b_SaveTask.Enabled = false;
             b_CancelTask.Enabled = false;
 
-            b_SendMessage.Enabled = !Program.flag_ReadOnly;
-            tb_NewMessage.Enabled = !Program.flag_ReadOnly;
-            tb_Name.ReadOnly = Program.flag_ReadOnly;
-            tb_Description.ReadOnly = Program.flag_ReadOnly;
-            lb_Progress.Enabled = !Program.flag_ReadOnly;
-            dt_Begin.Enabled = !Program.flag_ReadOnly;
-            dt_End.Enabled = !Program.flag_ReadOnly;
+            b_SendMessage.Enabled = !Config.flag_ReadOnly;
+            tb_NewMessage.Enabled = !Config.flag_ReadOnly;
+            tb_Name.ReadOnly = Config.flag_ReadOnly;
+            tb_Description.ReadOnly = Config.flag_ReadOnly;
+            lb_Progress.Enabled = !Config.flag_ReadOnly;
+            dt_Begin.Enabled = !Config.flag_ReadOnly;
+            dt_End.Enabled = !Config.flag_ReadOnly;
         }
         private bool saveTaskInfo(bool Force)
         {
@@ -992,12 +934,12 @@ namespace Tasks.Forms
             {
                 showTaskInfo(id);
 
-                b_FilesShow.Enabled = !Program.flag_ReadOnly;
-                b_CoopShow.Enabled = !Program.flag_ReadOnly;
-                b_AddStep.Enabled = !Program.flag_ReadOnly;
-                b_EditStep.Enabled = !Program.flag_ReadOnly;
-                b_DoStep.Enabled = !Program.flag_ReadOnly;
-                b_SendMessage.Enabled = !Program.flag_ReadOnly;
+                b_FilesShow.Enabled = !Config.flag_ReadOnly;
+                b_CoopShow.Enabled = !Config.flag_ReadOnly;
+                b_AddStep.Enabled = !Config.flag_ReadOnly;
+                b_EditStep.Enabled = !Config.flag_ReadOnly;
+                b_DoStep.Enabled = !Config.flag_ReadOnly;
+                b_SendMessage.Enabled = !Config.flag_ReadOnly;
             }
         }
     }

@@ -5,6 +5,8 @@ namespace Tasks
 {
     static partial class Program
     {
+        static public bool isExiting = false;
+
         /// <summary>
         /// Главная точка входа для приложения.
         /// </summary>
@@ -18,23 +20,50 @@ namespace Tasks
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            Program.AppExecutable = Application.ExecutablePath;
-            Program.CurrentVersion = Application.ProductVersion;
+            Config.AppExecutable = Application.ExecutablePath;
+            Config.CurrentVersion = Application.ProductVersion;
 
             if (Update.checkLaunch(args) == true)
                 return;
 
+            System.IO.FileStream fs;
+            try
+            {
+                fs = new System.IO.FileStream("lock.lck", System.IO.FileMode.Create, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
+            }
+            catch
+            {
+                MessageBox.Show("Уже запущена другая копия программы", "Задачи - ошибка запуска", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             clearReports();
-            Application.Run(new Forms.Main());
+            Tray.InitTray();
+            Config.ReadConfig();
+            Config.ApplyConfig();
+
+
+            Threads.CheckNews.Start();
+            new System.Threading.Thread(CheckUpdates).Start();
+
+            Application.Run();
+            isExiting = true;
+
+            Threads.CheckNews.Stop();
+
+            Config.WriteConfig();
             Network.User_Exit();
             clearReports();
+
+            Tray.ExitTray();
         }
+
         static private void clearReports()
         {
             // Clear old reports
             try
             {
-                foreach (string oneFile in System.IO.Directory.GetFiles(System.IO.Path.GetDirectoryName(Program.AppExecutable), "tmp????.xlsx"))
+                foreach (string oneFile in System.IO.Directory.GetFiles(System.IO.Path.GetDirectoryName(Config.AppExecutable), "tmp????.xlsx"))
                 {
                     System.IO.File.Delete(oneFile);
                 }
@@ -42,6 +71,30 @@ namespace Tasks
             catch { }
         }
 
+        static private void CheckUpdates()
+        {
+            try
+            {
+                if (Tasks.Update.checkFiles() == false)
+                {
+                    Tray.ShowBaloon("Обновление", "Загружаются библиотеки для формирования отчетов");
+                    if (Tasks.Update.downloadFiles() == true)
+                        Tray.ShowBaloon("Обновление", "Библиотеки загружены. Теперь можно формировать отчеты");
+                    else
+                        Tray.ShowBaloon("Обновление", "Не удалось загрузить библиотеки. Формирование отчетов недоступно");
+                }
+
+                Tasks.Update.checkUpgrade();
+                if (Config.CurrentVersion != Config.ServerVersion)
+                {
+                    Tray.SetStatusUpdate();
+                }
+            }
+            catch { }
+        }
+
+
+        #region Catch unhandled errors
         private static void UnhandledThreadException(object sender, System.Threading.ThreadExceptionEventArgs e)
         {
             CatchException(e.Exception);
@@ -70,8 +123,9 @@ namespace Tasks
         }
         private static void SendException()
         {
-            foreach (string oneFile in System.IO.Directory.GetFiles(System.IO.Path.GetDirectoryName(Program.AppExecutable), "*.dump"))
+            foreach (string oneFile in System.IO.Directory.GetFiles(System.IO.Path.GetDirectoryName(Config.AppExecutable), "*.dump"))
                 Update.UploadDump(oneFile);
         }
+        #endregion
     }
 }

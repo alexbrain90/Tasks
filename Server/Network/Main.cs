@@ -83,6 +83,9 @@ namespace Tasks_Server
                             case 2:
                                 User_Info(tcp, buf);
                                 break;
+                            case 3:
+                                User_Exit(tcp, buf);
+                                break;
                         }
                         #endregion
                         break;

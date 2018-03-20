@@ -74,10 +74,10 @@ namespace Tasks.Forms
         private void Manager_Shown(object sender, EventArgs e)
         {
             int tmp = -1;
-            if (Program.user_ID != Program.user_IDMain)
-                tmp = Program.user_ID;
+            if (Config.user_ID != Config.user_IDMain)
+                tmp = Config.user_ID;
 
-            Network.Manager_Change(Program.user_IDMain);
+            Network.Manager_Change(Config.user_IDMain);
 
             tv_List.BeginUpdate();
             tv_List.Nodes.Clear();
@@ -105,7 +105,7 @@ namespace Tasks.Forms
         }
         private bool AddUser(TreeNodeCollection nodes, string id, string name, string manager)
         {
-            if (manager == Program.user_IDMain.ToString())
+            if (manager == Config.user_IDMain.ToString())
             {
                 TreeNode tn = new TreeNode(name);
                 tn.Tag = id;

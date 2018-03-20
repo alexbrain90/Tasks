@@ -58,13 +58,13 @@ namespace Tasks.Forms.Messages
             {
                 n++;
                 l_Info.Text = "Попытка повторного соединения: " + n.ToString();
-                int r = Network.User_Auth(Program.user_NameMain, Program.user_Pass);
+                int r = Network.User_Auth(Config.user_NameMain, Config.user_Pass);
 
                 if (r == 1)
                     this.DialogResult = DialogResult.OK;
                 else if (r == 2)
                 {
-                    DialogResult dialog = new ChangePassword(Program.user_NameMain).ShowDialog();
+                    DialogResult dialog = new ChangePassword(Config.user_NameMain).ShowDialog();
                     if (dialog == DialogResult.OK)
                     {
                         this.DialogResult = DialogResult.OK;

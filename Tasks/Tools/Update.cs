@@ -24,25 +24,25 @@ namespace Tasks
             try
             {
                 // Проверяем необходимость обновления программы
-                if (Program.AppExecutable.Length >= 8 && Program.AppExecutable.Substring(Program.AppExecutable.Length - 8) == "_new.exe")
+                if (Config.AppExecutable.Length >= 8 && Config.AppExecutable.Substring(Config.AppExecutable.Length - 8) == "_new.exe")
                 {
                     // Ожидаем завершения предыдущей копии программы
-                    Thread.Sleep(5000);
+                    Thread.Sleep(15000);
                     // Заменяем файл приложения
-                    File.Copy(Program.AppExecutable, Program.AppExecutable.Substring(0, Program.AppExecutable.Length - 8), true);
+                    File.Copy(Config.AppExecutable, Config.AppExecutable.Substring(0, Config.AppExecutable.Length - 8), true);
                     // Запускаем обновленную версию программы
                     Process P = new Process();
-                    P.StartInfo.FileName = Program.AppExecutable.Substring(0, Program.AppExecutable.Length - 8);
+                    P.StartInfo.FileName = Config.AppExecutable.Substring(0, Config.AppExecutable.Length - 8);
                     P.StartInfo.Arguments = "";
                     for (int i = 0; i < args.Length; i++)
                         P.StartInfo.Arguments += " " + args[i];
-                    P.StartInfo.WorkingDirectory = Path.GetDirectoryName(Program.AppExecutable);
+                    P.StartInfo.WorkingDirectory = Path.GetDirectoryName(Config.AppExecutable);
                     P.StartInfo.UseShellExecute = true;
                     P.Start();
                     return true;
                 }
                 else
-                    File.Delete(Program.AppExecutable + "_new.exe");
+                    File.Delete(Config.AppExecutable + "_new.exe");
             }
             catch { }
 
@@ -55,7 +55,7 @@ namespace Tasks
         /// <returns>Возвращает true если удалось получить сведения</returns>
         static public void checkUpgrade()
         {
-            Program.ServerVersion = Program.CurrentVersion;
+            Config.ServerVersion = Config.CurrentVersion;
             // Получаем данные о версии программы
             string Text = getHttpPage("http://194.154.82.6:8080/Apps/" + AppName + "/info_" + Language.Index + ".txt");
             if (Text == "")
@@ -77,9 +77,9 @@ namespace Tasks
             }
 
             // Извлекаем версию
-            Program.ServerVersion = Text.Substring(1, n - 1);
+            Config.ServerVersion = Text.Substring(1, n - 1);
             // Извлекаем описание
-            Program.ServerVersionInfo = Text.Substring(n + 2);
+            Config.ServerVersionInfo = Text.Substring(n + 2);
         }
         /// <summary>
         /// Выполняет загрузку новой версии приложения
@@ -88,25 +88,25 @@ namespace Tasks
         static public bool makeUpgrade(string[] args)
         {
             // Если текущая версия программы не совпадает с самой новой, запускаем процесс обновления
-            if (Program.ServerVersion != Program.CurrentVersion)
+            if (Config.ServerVersion != Config.CurrentVersion)
             {
                 // Удаляем имеющийся файла
-                if (File.Exists(Program.AppExecutable + "_new.exe") == true)
-                    File.Delete(Program.AppExecutable + "_new.exe");
+                if (File.Exists(Config.AppExecutable + "_new.exe") == true)
+                    File.Delete(Config.AppExecutable + "_new.exe");
 
                 // Загружаем новую версию
-                if (getHttpPage("http://194.154.82.6:8080/Apps/" + AppName + "/App.exe", Program.AppExecutable + "_new.exe") == false)
+                if (getHttpPage("http://194.154.82.6:8080/Apps/" + AppName + "/App.exe", Config.AppExecutable + "_new.exe") == false)
                     return false;
 
                 // Запускаем скачанный файл
                 Process P = new Process();
-                P.StartInfo.FileName = Program.AppExecutable + "_new.exe";
+                P.StartInfo.FileName = Config.AppExecutable + "_new.exe";
 
                 P.StartInfo.Arguments = "";
                 for (int i = 0; i < args.Length; i++)
                     P.StartInfo.Arguments += " " + args[i];
 
-                P.StartInfo.WorkingDirectory = Path.GetDirectoryName(Program.AppExecutable);
+                P.StartInfo.WorkingDirectory = Path.GetDirectoryName(Config.AppExecutable);
                 P.StartInfo.UseShellExecute = true;
                 P.Start();
                 return true;

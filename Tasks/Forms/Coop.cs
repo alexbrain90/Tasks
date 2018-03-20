@@ -59,11 +59,11 @@ namespace Tasks.Forms
 
             this.Shown += Coop_Shown;
 
-            tb_Worker.Enabled = !Program.flag_ReadOnly;
-            lb_Filter.Enabled = !Program.flag_ReadOnly;
-            lb_List.Enabled = !Program.flag_ReadOnly;
-            b_Add.Enabled = !Program.flag_ReadOnly;
-            b_Del.Enabled = !Program.flag_ReadOnly;
+            tb_Worker.Enabled = !Config.flag_ReadOnly;
+            lb_Filter.Enabled = !Config.flag_ReadOnly;
+            lb_List.Enabled = !Config.flag_ReadOnly;
+            b_Add.Enabled = !Config.flag_ReadOnly;
+            b_Del.Enabled = !Config.flag_ReadOnly;
         }
 
         private void Coop_Shown(object sender, EventArgs e)

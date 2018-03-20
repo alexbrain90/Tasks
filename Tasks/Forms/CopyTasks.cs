@@ -171,7 +171,7 @@ namespace Tasks.Forms
             for(int i =0; i < steps.Length / 3; i++)
                 Network.Step_Add(newID, steps[i, 0]);
             for (int i = 0; i < coop.Length / 2; i++)
-                if (coop[i,0] != Program.user_IDMain.ToString())
+                if (coop[i,0] != Config.user_IDMain.ToString())
                     Network.Coop_Add(newID, Convert.ToInt32(coop[i, 0]));
         }
     }

@@ -24,7 +24,7 @@ namespace Tasks.Forms
         }
         private void InitialControls()
         {
-            bool isPlan = Program.ConfigFile.Read("Reports", "Plan", "false") == "false" ? false : true;
+            bool isPlan = Config.ConfigFile.Read("Reports", "Plan", "false") == "false" ? false : true;
 
             Graphics g = CreateGraphics();
 
@@ -42,10 +42,10 @@ namespace Tasks.Forms
 
             this.Controls.Add(dt_Begin = new DateTimePicker());
             dt_Begin.Location = new Point(rb_Plan.Left, rb_Plan.Bottom + 10);
-            dt_Begin.Value = new DateTime(Convert.ToInt64(Program.ConfigFile.Read("Reports", "ManualDateBegin", DateTime.Now.Ticks.ToString())));
+            dt_Begin.Value = new DateTime(Convert.ToInt64(Config.ConfigFile.Read("Reports", "ManualDateBegin", DateTime.Now.Ticks.ToString())));
             this.Controls.Add(dt_End = new DateTimePicker());
             dt_End.Location = new Point(dt_Begin.Right + 10, dt_Begin.Top);
-            dt_End.Value = new DateTime(Convert.ToInt64(Program.ConfigFile.Read("Reports", "ManualDateEnd", DateTime.Now.Ticks.ToString())));
+            dt_End.Value = new DateTime(Convert.ToInt64(Config.ConfigFile.Read("Reports", "ManualDateEnd", DateTime.Now.Ticks.ToString())));
 
             this.Controls.Add(b_Cancel = new Button());
             b_Cancel.AutoSize = true;
@@ -75,12 +75,12 @@ namespace Tasks.Forms
                 Tools.MakeReport(dt_Begin.Value, dt_End.Value);
 
             if (rb_Plan.Checked == true)
-                Program.ConfigFile.Write("Reports", "Plan", "true");
+                Config.ConfigFile.Write("Reports", "Plan", "true");
             else
-                Program.ConfigFile.Write("Reports", "Plan", "false");
-            Program.ConfigFile.Write("Reports", "ManualDateBegin", dt_Begin.Value.Ticks.ToString());
-            Program.ConfigFile.Write("Reports", "ManualDateEnd", dt_End.Value.Ticks.ToString());
-            Program.ConfigFile.Save();
+                Config.ConfigFile.Write("Reports", "Plan", "false");
+            Config.ConfigFile.Write("Reports", "ManualDateBegin", dt_Begin.Value.Ticks.ToString());
+            Config.ConfigFile.Write("Reports", "ManualDateEnd", dt_End.Value.Ticks.ToString());
+            Config.ConfigFile.Save();
         }
 
         private void b_Cancel_Click(object sender, EventArgs e)

@@ -8,14 +8,18 @@ namespace Tasks.Forms
     class Login : Form
     {
         public int UserID = -1;
+        public string UserName, Password;
 
+        private PictureBox pb_User;
         private TextBox tb_User, tb_Pass;
         private Label l_User, l_Pass;
+        private CheckBox cb_AutoLogin;
         private Button b_Ok, b_Cancel;
 
         public Login()
         {
-            this.ShowInTaskbar = false;
+            this.Font = Config.fort_Main;
+            this.ShowInTaskbar = true;
             this.FormBorderStyle = FormBorderStyle.FixedToolWindow;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
@@ -24,39 +28,50 @@ namespace Tasks.Forms
             this.Text = Tasks.Language.Login_Caption;
 
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
-            this.ClientSize = new Size(270, 150);
-            this.StartPosition = FormStartPosition.CenterParent;
+            this.ClientSize = new Size(440, 160);
+            this.StartPosition = FormStartPosition.CenterScreen;
             this.Shown += Login_Shown;
 
+            this.Controls.Add(pb_User = new PictureBox());
+            pb_User.Location = new Point(10, 10);
+            pb_User.Size = new Size(128, 128);
+            pb_User.Image = Properties.Resources.Login_User;
+
             this.Controls.Add(l_User = new Label());
-            l_User.Location = new Point(20, 0);
-            l_User.Size = new Size(this.ClientSize.Width - 40, 20);
+            l_User.Location = new Point(pb_User.Right + 20, 10);
+            l_User.AutoSize = true;
             l_User.Text = Language.Login_UserName;
             l_User.TextAlign = ContentAlignment.BottomLeft;
             this.Controls.Add(tb_User = new TextBox());
-            tb_User.Location = new Point(10, l_User.Bottom);
-            tb_User.Size = new Size(this.ClientSize.Width - 20, 20);
+            tb_User.Location = new Point(l_User.Left, l_User.Bottom + 4);
+            tb_User.Size = new Size(this.ClientSize.Width - pb_User.Right - 30, 20);
             tb_User.TextChanged += Tb_User_TextChanged;
 
             this.Controls.Add(l_Pass = new Label());
-            l_Pass.Location = new Point(l_User.Left, tb_User.Bottom);
-            l_Pass.Size = l_User.Size;
+            l_Pass.Location = new Point(l_User.Left, tb_User.Bottom + 6);
+            l_Pass.AutoSize = true;
             l_Pass.Text = Language.Login_Password;
             l_Pass.TextAlign = ContentAlignment.BottomLeft;
             this.Controls.Add(tb_Pass = new TextBox());
-            tb_Pass.Location = new Point(tb_User.Left, l_Pass.Bottom);
-            tb_Pass.Size = new Size(tb_User.Width, tb_User.Height);
+            tb_Pass.Location = new Point(tb_User.Left, l_Pass.Bottom + 4);
+            tb_Pass.Size = tb_User.Size;
             tb_Pass.UseSystemPasswordChar = true;
             tb_Pass.PreviewKeyDown += Tb_Pass_PreviewKeyDown;
 
+            this.Controls.Add(cb_AutoLogin = new CheckBox());
+            cb_AutoLogin.AutoSize = true;
+            cb_AutoLogin.Location = new Point(tb_Pass.Left, tb_Pass.Bottom + 10);
+            cb_AutoLogin.Text = "Сохранить пароль";
+            cb_AutoLogin.Checked = Config.login_Auto;
+
             this.Controls.Add(b_Cancel = new Button());
-            b_Cancel.Location = new Point(this.ClientSize.Width / 2 + 5, tb_Pass.Bottom + 10);
-            b_Cancel.Size = new Size((this.ClientSize.Width - 30) / 2, 25);
+            b_Cancel.Size = new Size((this.ClientSize.Width - tb_Pass.Left - 30) / 2, 30);
+            b_Cancel.Location = new Point(this.ClientSize.Width - b_Cancel.Width - 10, cb_AutoLogin.Bottom + 20);
             b_Cancel.Text = Language.Login_Cancel;
             b_Cancel.Click += b_Cancel_Click;
             this.Controls.Add(b_Ok = new Button());
-            b_Ok.Location = new Point(10, b_Cancel.Top);
             b_Ok.Size = b_Cancel.Size;
+            b_Ok.Location = new Point(b_Cancel.Left - b_Ok.Width -10, b_Cancel.Top);
             b_Ok.Text = Language.Login_OK;
             b_Ok.Click += b_Ok_Click;
 
@@ -64,9 +79,8 @@ namespace Tasks.Forms
             this.ClientSize = new Size(this.ClientSize.Width, b_Cancel.Bottom + 10);
 
 
-            string tmp = Program.ConfigFile.Read("Global", "LastUserName");
-            if (tmp != "" && tmp != null)
-                tb_User.Text = tmp;
+            tb_User.Text = Config.user_NameMain;
+            tb_Pass.Text = Config.user_Pass;
         }
 
         private void Tb_User_TextChanged(object sender, EventArgs e)
@@ -106,15 +120,19 @@ namespace Tasks.Forms
 
         private void b_Ok_Click(object sender, EventArgs e)
         {
-            switch(Network.User_Auth(tb_User.Text, tb_Pass.Text))
+            UserName = tb_User.Text;
+            Password = tb_Pass.Text;
+            Config.login_Auto = cb_AutoLogin.Checked;
+
+            switch (Network.User_Auth(tb_User.Text, tb_Pass.Text))
             {
                 case 1:
-                    Program.user_Name = tb_User.Text;
-                    Program.user_NameMain = Program.user_Name;
-                    Program.user_Pass = tb_Pass.Text;
+                    Config.user_Name = tb_User.Text;
+                    Config.user_NameMain = Config.user_Name;
+                    Config.user_Pass = tb_Pass.Text;
 
-                    Program.ConfigFile.Write("Global", "LastUserName", tb_User.Text);
-                    Program.ConfigFile.Save();
+                    Config.ConfigFile.Write("Global", "LastUserName", tb_User.Text);
+                    Config.ConfigFile.Save();
         
                     this.DialogResult = DialogResult.OK;
                     this.Close();
@@ -124,19 +142,19 @@ namespace Tasks.Forms
                     tb_Pass.Text = "";
                     if (dialog == DialogResult.OK)
                     {
-                        Program.user_Name = tb_User.Text;
-                        Program.user_NameMain = Program.user_Name;
+                        Config.user_Name = tb_User.Text;
+                        Config.user_NameMain = Config.user_Name;
 
-                        Program.ConfigFile.Write("Global", "LastUserName", tb_User.Text);
-                        Program.ConfigFile.Save();
+                        Config.ConfigFile.Write("Global", "LastUserName", tb_User.Text);
+                        Config.ConfigFile.Save();
 
                         this.DialogResult = DialogResult.OK;
                         this.Close();
                     }
                     break;
                 case 3:
-                    Program.ConfigFile.Write("Global", "LastUserName", tb_User.Text);
-                    Program.ConfigFile.Save();
+                    Config.ConfigFile.Write("Global", "LastUserName", tb_User.Text);
+                    Config.ConfigFile.Save();
 
                     MessageBox.Show("Для дальнейшей работы необходимо выполнить обовление приложения до последней версии", "Ошибка авторизации", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     Tasks.Update.checkUpgrade();

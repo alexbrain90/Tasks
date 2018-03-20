@@ -340,8 +340,8 @@ namespace Tasks
             }
 
             xL.Worksheet("План").Cell(1, 1).Value = "Рабочий план на " + Tools.DateTimeToString(dt1, "MMMM YYYY").ToUpper() + " года";
-            xL.Worksheet("План").Cell(2, 1).Value = Program.user_Fio;
-            xL.Worksheet("План").Cell(3, 1).Value = Program.user_Post;
+            xL.Worksheet("План").Cell(2, 1).Value = Config.user_Fio;
+            xL.Worksheet("План").Cell(3, 1).Value = Config.user_Post;
 
             int n = 0;
             for (int i = 0; i < list.Length / 4; i++)
@@ -360,7 +360,7 @@ namespace Tasks
                 xL.Worksheet("План").Cell(6 + i, 4).Value = list[i, 3];
             }
 
-            xL.Worksheet("План").Cell(list.Length / 4 + 7, 1).Value = Tools.FioToShort(Program.user_Fio) + "     ____________________     ";
+            xL.Worksheet("План").Cell(list.Length / 4 + 7, 1).Value = Tools.FioToShort(Config.user_Fio) + "     ____________________     ";
 
             xL.Save();
             System.Diagnostics.Process p = new System.Diagnostics.Process();
@@ -385,8 +385,8 @@ namespace Tasks
             }
 
             xL.Worksheet("Отчет").Cell(1, 1).Value = "Отчет по рабочему плану за " + Tools.DateTimeToString(dt1, "MMMM YYYY").ToUpper() + " года";
-            xL.Worksheet("Отчет").Cell(2, 1).Value = Program.user_Fio;
-            xL.Worksheet("Отчет").Cell(3, 1).Value = Program.user_Post;
+            xL.Worksheet("Отчет").Cell(2, 1).Value = Config.user_Fio;
+            xL.Worksheet("Отчет").Cell(3, 1).Value = Config.user_Post;
             int n = 0;
             for (int i = 0; i < list.Length / 10; i++)
             {
@@ -496,7 +496,7 @@ namespace Tasks
                 }
             }
 
-            xL.Worksheet("Отчет").Cell(list.Length / 7 + 9, 1).Value = Tools.FioToShort(Program.user_Fio) + "     ____________________     ";
+            xL.Worksheet("Отчет").Cell(list.Length / 7 + 9, 1).Value = Tools.FioToShort(Config.user_Fio) + "     ____________________     ";
 
             xL.Save();
             System.Diagnostics.Process p = new System.Diagnostics.Process();

@@ -9,7 +9,7 @@ namespace Tasks_Server
     {
         private bool CheckVersion(string version)
         {
-            string[] list = new string[] { "0.8.1.37"};
+            string[] list = new string[] { "0.9.2.40"};
             for (int i = 0; i < list.Length; i++)
             {
                 if (list[i] == version)
@@ -154,6 +154,18 @@ namespace Tasks_Server
 
             sw.Stop();
             Program.log.WriteLine("Смена пароля: " + id.ToString() + "   [" + sw.ElapsedMilliseconds.ToString() + "]", false);
+        }
+        private void User_Exit(TcpClient tcp, byte[] data)
+        {
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+
+            long id = Convert.ToInt64(ByteToString(data));
+
+            Auth_Remove(id);
+
+            sw.Stop();
+            Program.log.WriteLine("Выход из программы: " + id.ToString() + "   [" + sw.ElapsedMilliseconds.ToString() + "]", false);
         }
 
         private int Auth_Check(long id)
