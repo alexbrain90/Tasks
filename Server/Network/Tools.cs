@@ -15,6 +15,21 @@ namespace Tasks_Server
 
             return result;
         }
+        static private byte[] StringToByte(int value)
+        {
+            return StringToByte(value.ToString());
+        }
+        static private byte[] StringToByte(long value)
+        {
+            return StringToByte(value.ToString());
+        }
+        static private byte[] StringToByte(bool value)
+        {
+            if (value == true)
+                return StringToByte("1");
+            else
+                return StringToByte("0");
+        }
         static private string ByteToString(byte[] data)
         {
             int len = BitConverter.ToInt32(data, 0);
@@ -77,6 +92,12 @@ namespace Tasks_Server
             string i = text.Substring(n1 + 1, n2 - n1);
             string o = text.Substring(n2 + 1);
             return f + " " + i.Substring(0, 1).ToUpper() + "." + o.Substring(0, 1).ToUpper() + ".";
+        }
+
+        static public string DateTimeToString(long ticks)
+        {
+            DateTime dt = new DateTime(ticks);
+            return dt.Day.ToString("00") + "." + dt.Month.ToString("00") + "." + dt.Year.ToString("0000");
         }
     }
 }

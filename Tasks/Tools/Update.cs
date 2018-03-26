@@ -44,7 +44,10 @@ namespace Tasks
                 else
                     File.Delete(Config.AppExecutable + "_new.exe");
             }
-            catch { }
+            catch
+            {
+                return true;
+            }
 
             return false;
         }

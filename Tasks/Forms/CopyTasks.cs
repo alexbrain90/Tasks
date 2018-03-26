@@ -100,8 +100,8 @@ namespace Tasks.Forms
             string[,] list = Network.Task_List(0, dt1.Ticks, dt2.Ticks, 0);
             lb_From.BeginUpdate();
             lb_From.Items.Clear();
-            TaskIDs = new long[list.Length / 6];
-            for(int i =0; i < list.Length / 6; i++)
+            TaskIDs = new long[list.Length / 10];
+            for(int i =0; i < list.Length / 10; i++)
             {
                 lb_From.Items.Add(list[i, 0]);
                 TaskIDs[i] = Convert.ToInt64(list[i, 1]);
@@ -167,7 +167,7 @@ namespace Tasks.Forms
                 }
             }
 
-            long newID = Network.Task_Add(info[0], info[1], dt1.Ticks, dt2.Ticks);
+            long newID = Network.Task_Add(info[0], info[1], dt1.Ticks, dt2.Ticks, Convert.ToInt32(info[6]), info[7]);
             for(int i =0; i < steps.Length / 3; i++)
                 Network.Step_Add(newID, steps[i, 0]);
             for (int i = 0; i < coop.Length / 2; i++)

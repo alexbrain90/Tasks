@@ -298,6 +298,7 @@ namespace Tasks.Forms
         // 0 - все
         // 1 - в работе
         // 2 - выполненные
+        // 3 - удаленные
 
         private void m_Main_Filter_ResetStatus()
         {
@@ -338,6 +339,19 @@ namespace Tasks.Forms
             filterStatus = 2;
 
             Config.ConfigFile.Write("MainForm", "FilterStatus", "2");
+            Config.ConfigFile.Save();
+
+            l_SortInfo.Text = m_Main_Filter_String();
+            getTasksList();
+        }
+        private void m_Main_Filter_Deleted(object Sender, EventArgs e)
+        {
+            m_Main_Filter_ResetStatus();
+            m_Main.MenuItems[1].MenuItems[5].MenuItems[3].Checked = true;
+
+            filterStatus = 3;
+
+            Config.ConfigFile.Write("MainForm", "FilterStatus", "3");
             Config.ConfigFile.Save();
 
             l_SortInfo.Text = m_Main_Filter_String();

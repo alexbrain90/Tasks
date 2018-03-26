@@ -17,6 +17,7 @@ namespace Tasks.Forms
             this.MinimizeBox = false;
             this.ClientSize = new Size(400, 600);
             this.FormBorderStyle = FormBorderStyle.Fixed3D;
+            this.StartPosition = FormStartPosition.CenterScreen;
 
             this.Controls.Add(l_Current = new Label());
             l_Current.Location = new Point(10, 10);

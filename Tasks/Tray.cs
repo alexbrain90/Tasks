@@ -7,8 +7,9 @@ namespace Tasks
     {
         static private NotifyIcon tray_Icon = new NotifyIcon();
         static private ContextMenu cm_Tray = new ContextMenu();
-        static private int Status = 1; static private System.Threading.Thread t_Anim = new System.Threading.Thread(AnimFunc);
-        static private int Status_Miss = 0, Status_New = 0;
+        static private System.Threading.Thread t_Anim = new System.Threading.Thread(AnimFunc);
+        static private bool StatusNormal = false, StatusMiss = false, StatusNew = false, StatusError = true;
+        static private int StatusMissCount = 0;
         static private Forms.Main f_Main;
 
         static public void InitTray()
@@ -24,6 +25,7 @@ namespace Tasks
             tray_Icon.ContextMenu = cm_Tray;
             tray_Icon.MouseClick += tray_Click;
             tray_Icon.Visible = true;
+            tray_Icon.Text = "Рабочие планы";
 
             t_Anim.Start();
         }
@@ -34,6 +36,10 @@ namespace Tasks
             tray_Icon.Visible = false;
         }
 
+        static public void ShowMainForm()
+        {
+            tray_Open(new object(), new EventArgs());
+        }
         private static void tray_Click(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
@@ -41,6 +47,9 @@ namespace Tasks
         }
         private static void tray_Open(object sender, EventArgs e)
         {
+            if (Threads.Connection.Connected == false)
+                return;
+
             if (f_Main == null || f_Main.IsDisposed == true)
                 f_Main = new Forms.Main();
 
@@ -53,6 +62,8 @@ namespace Tasks
                 else
                     f_Main.WindowState = FormWindowState.Normal;
             }
+
+            UnSetStatusNew();
         }
         private static void tray_Update(object sender, EventArgs e)
         {
@@ -63,11 +74,15 @@ namespace Tasks
         }
         private static void tray_Login(object sender, EventArgs e)
         {
+            Threads.Connection.Stop();
             Threads.CheckNews.Stop();
             Network.User_Exit();
-            f_Main.Close();
+            if (f_Main != null && f_Main.IsDisposed != true)
+                f_Main.Close();
 
-            Threads.CheckNews.Login();
+            Threads.Connection.Login();
+
+            Threads.Connection.Start();
             Threads.CheckNews.Start();
         }
         private static void tray_Exit(object sender, EventArgs e)
@@ -77,45 +92,42 @@ namespace Tasks
 
         public static void SetStatusNormal()
         {
-            if (Status == -1)
+            if (StatusNormal == false && StatusError == true)
                 tray_Icon.ShowBalloonTip(5000, "Подключение", "Связь с сервером успешно восстановлена", ToolTipIcon.Info);
 
-            if (Status_New != 0)
-                Status = 0;
-            else if (Status_Miss != 0)
-                Status = 2;
-            else
-                Status = 1;
+            StatusNormal = true;
+            StatusError = false;
         }
         public static void SetStatusError()
         {
-            if (Status != -1)
+            if (StatusNormal == true && StatusError == false)
                 tray_Icon.ShowBalloonTip(5000, "Подключение", "Потеряна связь с сервером", ToolTipIcon.Error);
-            Status = -1;
+
+            StatusNormal = false;
+            StatusError = true;
         }
         public static void SetStatusNew(string Text)
         {
-            Status_New++;
             tray_Icon.ShowBalloonTip(15000, "Новое событие", Text, ToolTipIcon.None);
-            Status = 0;
+            StatusNew = true;
         }
-        public static void SetStatusNewMinus()
+        public static void UnSetStatusNew()
         {
-            if (Status_New > 0)
-                Status_New--;
-
-            SetStatusNormal();
+            StatusNew = false;
         }
         public static void SetStatusMiss(int Count, string Text)
         {
-            if (Status_Miss != Count)
-                tray_Icon.ShowBalloonTip(15000, "Состояние", "Есть задачи (" + Count.ToString() + "), которые требуют вашего внимания:\r\n" + Text, ToolTipIcon.Info);
-            Status_Miss = Count;
-
-            if (Status_New != 0)
-                Status = 0;
+            if (Count != 0)
+            {
+                if (StatusMissCount != Count)
+                    tray_Icon.ShowBalloonTip(15000, "Состояние", "Есть задачи (" + Count.ToString() + "), которые требуют вашего внимания:\r\n" + Text, ToolTipIcon.Info);
+                StatusMiss = true;
+            }
             else
-                Status = 2;
+            {
+                StatusMiss = false;
+            }
+            StatusMissCount = Count;
         }
         public static void SetStatusUpdate()
         {
@@ -130,29 +142,33 @@ namespace Tasks
 
         private static void AnimFunc()
         {
+            System.Drawing.Icon icon_Error = Properties.Resources.Tray_Error;
+            System.Drawing.Icon icon_New1 = Properties.Resources.Tray_New1;
+            System.Drawing.Icon icon_New5 = Properties.Resources.Tray_New5;
+            System.Drawing.Icon icon_Normal = Properties.Resources.Tray_Normal;
+            System.Drawing.Icon icon_Miss = Properties.Resources.Tray_Miss;
+
             bool tick = false;
-            while(true)
+            while (true)
             {
                 try
                 {
-                    switch (Status)
+                    if (StatusError == true)
+                        tray_Icon.Icon = icon_Error;
+                    else if (StatusNormal == true)
                     {
-                        case -1:
-                            tray_Icon.Icon = Properties.Resources.Tray_Error;
-                            break;
-                        case 0:
+                        if (StatusNew == true)
+                        {
                             if (tick == true)
-                                tray_Icon.Icon = Properties.Resources.Tray_New1;
+                                tray_Icon.Icon = icon_New1;
                             else
-                                tray_Icon.Icon = Properties.Resources.Tray_New5;
+                                tray_Icon.Icon = icon_New5;
                             tick = !tick;
-                            break;
-                        case 1:
-                            tray_Icon.Icon = Properties.Resources.Tray_Normal;
-                            break;
-                        case 2:
-                            tray_Icon.Icon = Properties.Resources.Tray_Miss;
-                            break;
+                        }
+                        else if (StatusMiss == true)
+                            tray_Icon.Icon = icon_Miss;
+                        else
+                            tray_Icon.Icon = icon_Normal;
                     }
                 }
                 catch { }

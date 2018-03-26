@@ -55,20 +55,15 @@ namespace Tasks_Server
 
         private static void TempFunc()
         {
-            object[] sql = SQL.getData("SELECT DateAdd, DateStart, DateEnd FROM Tasks");
+            object[] sql = SQL.getData("SELECT DateAdd FROM Tasks");
             long id;
             DateTime dt1, dt2;
             for(int i =0; i < sql.Length; i++)
             {
                 object[] line = (object[])sql[i];
                 id = (long)line[0];
-                dt1 = new DateTime((long)line[1]);
-                dt2 = new DateTime((long)line[2]);
 
-                dt1 = new DateTime(dt1.Year, dt1.Month, dt1.Day);
-                dt2 = new DateTime(dt2.Year, dt2.Month, dt2.Day).AddDays(1).AddTicks(-1);
-
-                SQL.getData("UPDATE Tasks SET DateStart=\'" + dt1.Ticks.ToString() + "\', DateEnd=\'" + dt2.Ticks.ToString() + "\' WHERE DateAdd=\'" + id.ToString() + "\'");
+                SQL.getData("INSERT INTO History VALUES (\'" + id.ToString() + "\', \'0\', \'1\', \'0\', \'\', \'\')");
             }
         }
     }

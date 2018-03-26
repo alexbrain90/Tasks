@@ -20,7 +20,7 @@ namespace Tasks
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            Config.AppExecutable = Application.ExecutablePath;
+            Config.AppExecutable = Application.ExecutablePath; // use assembly instead
             Config.CurrentVersion = Application.ProductVersion;
 
             if (Update.checkLaunch(args) == true)
@@ -42,14 +42,19 @@ namespace Tasks
             Config.ReadConfig();
             Config.ApplyConfig();
 
-
+            
+            Threads.Connection.Start();
             Threads.CheckNews.Start();
             new System.Threading.Thread(CheckUpdates).Start();
+
+            //if (args.Length == 1 && args[0] == "-a")
+                //Tray.ShowMainForm();
 
             Application.Run();
             isExiting = true;
 
             Threads.CheckNews.Stop();
+            Threads.Connection.Stop();
 
             Config.WriteConfig();
             Network.User_Exit();

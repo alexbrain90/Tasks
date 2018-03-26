@@ -127,6 +127,15 @@ namespace Tasks_Server
                             case 6:
                                 Task_List_Report(tcp, buf);
                                 break;
+                            case 7:
+                                Task_UnDo(tcp, buf);
+                                break;
+                            case 8:
+                                Task_Delete(tcp, buf);
+                                break;
+                            case 9:
+                                Task_UnDelete(tcp, buf);
+                                break;
                         }
                         #endregion
                         break;
@@ -180,6 +189,22 @@ namespace Tasks_Server
                                 break;
                             case 3:
                                 Coop_Delete(tcp, buf);
+                                break;
+                        }
+                        #endregion
+                        break;
+                    case 6:
+                        #region Events
+                        switch (com[1])
+                        {
+                            case 0:
+                                Event_List(tcp, buf);
+                                break;
+                            case 1:
+                                //Coop_Filter(tcp, buf);
+                                break;
+                            case 2:
+                                Event_Delete(tcp, buf);
                                 break;
                         }
                         #endregion

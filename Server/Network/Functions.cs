@@ -9,7 +9,7 @@ namespace Tasks_Server
     {
         private bool CheckVersion(string version)
         {
-            string[] list = new string[] { "0.9.2.40"};
+            string[] list = new string[] { "0.10.0.41"};
             for (int i = 0; i < list.Length; i++)
             {
                 if (list[i] == version)
@@ -75,6 +75,8 @@ namespace Tasks_Server
                     data = ByteAdd(data, StringToByte(Auth_New((int)sql[0]).ToString()));
                     data = ByteAdd(data, StringToByte(sql[0].ToString()));
                     SendMessage(tcp, data);
+
+                    SQL.getData("UPDATE [Users] SET [Version]=\'" + Version + "\' WHERE [ID]=\'" + sql[0].ToString() + "\'");
 
                     sw.Stop();
                     Program.log.WriteLine("Успешная авторизация: " + Name + ". Хэш пароля: " + Hash + ". Версия ПО: " + Version + "   [" + sw.ElapsedMilliseconds.ToString() + "]", false);
@@ -348,26 +350,30 @@ namespace Tasks_Server
             if (Auth_SendError(tcp, id))
                 return;
 
-            string request = "SELECT Tasks.Name, Tasks.DateAdd, Tasks.DateFinish, Tasks.DateStart, Tasks.DateEnd FROM Tasks_Users INNER JOIN Tasks ON Tasks_Users.Task=Tasks.DateAdd WHERE Tasks_Users.UserName=\'" + id.ToString() + "\'";
+            string request = "SELECT [Tasks].[Name], [Tasks].[DateAdd], [Tasks].[DateFinish], [Tasks].[DateStart], [Tasks].[DateEnd], [Tasks_Users].[Type], [Tasks].[Direction], [Tasks].[Deleted] FROM [Tasks_Users] INNER JOIN [Tasks] ON [Tasks_Users].[Task]=[Tasks].[DateAdd] WHERE [Tasks_Users].[UserName]=\'" + id.ToString() + "\'";
 
             if (status == 1)
-                request += " AND Tasks.DateFinish IS NULL";
+                request += " AND [Tasks].[DateFinish] IS NULL";
             else if (status == 2)
-                request += " AND Tasks.DateFinish IS NOT NULL";
+                request += " AND [Tasks].[DateFinish] IS NOT NULL";
+            else if (status == 3)
+                request += " AND [Tasks].[Deleted]=\'1\'";
+            if (status == 1 || status == 2)
+                request += " AND [Tasks].[Deleted]=\'0\'";
 
             if (filterB != 0 && filterE != 0)
-                request += " AND ((Tasks.DateStart>=\'" + filterB.ToString() + "\' AND Tasks.DateStart<=\'" + filterE.ToString() + "\') OR (Tasks.DateEnd >= \'" + filterB.ToString() + "\' AND Tasks.DateEnd <= \'" + filterE.ToString() + "\') OR (Tasks.DateStart <= \'" + filterB.ToString() + "\' AND Tasks.DateEnd >= \'" + filterE.ToString() + "\'))";
+                request += " AND (([Tasks].[DateStart]>=\'" + filterB.ToString() + "\' AND [Tasks].[DateStart]<=\'" + filterE.ToString() + "\') OR ([Tasks].[DateEnd] >= \'" + filterB.ToString() + "\' AND [Tasks].[DateEnd] <= \'" + filterE.ToString() + "\') OR ([Tasks].[DateStart] <= \'" + filterB.ToString() + "\' AND [Tasks].[DateEnd] >= \'" + filterE.ToString() + "\'))";
 
             if (sortId == 0)
-                request += " ORDER BY Tasks.Name";
+                request += " ORDER BY [Tasks].[Name]";
             else if (sortId == 1)
-                request += " ORDER BY Tasks.DateAdd";
+                request += " ORDER BY [Tasks].[DateAdd]";
             else if (sortId == 2)
-                request += " ORDER BY Tasks.DateStart";
+                request += " ORDER BY [Tasks].[DateStart]";
             else if (sortId == 3)
-                request += " ORDER BY Tasks.DateEnd";
+                request += " ORDER BY [Tasks].[DateEnd]";
             else if (sortId == 4)
-                request += " ORDER BY Tasks.DateFinish";
+                request += " ORDER BY [Tasks].[DateFinish]";
 
             object[] sql = SQL.getData(request);
 
@@ -382,6 +388,11 @@ namespace Tasks_Server
                 data = ByteAdd(data, StringToByte(((long)line[3]).ToString()));
                 data = ByteAdd(data, StringToByte(((long)line[4]).ToString()));
                 object[] sql2 = SQL.getData("SELECT UserName FROM Tasks_Users WHERE Task=\'" + ((long)line[1]).ToString() + "\'");
+                data = ByteAdd(data, StringToByte(sql2.Length.ToString()));
+                data = ByteAdd(data, StringToByte(((int)line[5]).ToString()));
+                data = ByteAdd(data, StringToByte((string)line[6]));
+                data = ByteAdd(data, StringToByte(Convert.ToByte((bool)line[7]).ToString()));
+                sql2 = SQL.getData("SELECT TOP 1 [Type] FROM [Events] WHERE [TaskId]=\'" + ((long)line[1]).ToString() + "\' AND [UserId]=\'" +id.ToString() + "\'");
                 data = ByteAdd(data, StringToByte(sql2.Length.ToString()));
             }
 
@@ -403,9 +414,7 @@ namespace Tasks_Server
             if (Auth_SendError(tcp, idU))
                 return;
 
-            // Проверка на соответсвие задачи пользователю
-
-            object[] sql = SQL.getData("SELECT Name, Description, DateStart, DateEnd, DateFinish FROM Tasks WHERE DateAdd=\'" + idT.ToString() + "\'");
+            object[] sql = SQL.getData("SELECT [Tasks].[Name], [Tasks].[Description], [Tasks].[DateStart], [Tasks].[DateEnd], [Tasks].[DateFinish], [Tasks_Users].[Type], [Tasks].[Direction], [Tasks].[Deleted] FROM [Tasks] INNER JOIN [Tasks_Users] ON [Tasks].[DateAdd]=[Tasks_Users].[Task] WHERE [Tasks].[DateAdd]=\'" + idT.ToString() + "\' AND [Tasks_Users].[UserName]=\'" + idU.ToString() + "\'");
 
             if (sql.Length != 1)
             {
@@ -415,22 +424,45 @@ namespace Tasks_Server
                 return;
             }
 
-            string tmp;
-            sql = (object[])sql[0]; tmp = sql[0].ToString();
+            sql = (object[])sql[0];
             data = StringToByte("100");
             data = ByteAdd(data, StringToByte(sql[0].ToString()));
             data = ByteAdd(data, StringToByte(sql[1].ToString()));
             data = ByteAdd(data, StringToByte(((long)sql[2]).ToString()));
             data = ByteAdd(data, StringToByte(((long)sql[3]).ToString()));
-            byte[] tmpB = sql[4] == DBNull.Value ? StringToByte("0") : StringToByte(((long)sql[3]).ToString());
+            //data = ByteAdd(data, StringToByte(((long)sql[4]).ToString()));
 
-            sql = SQL.getData("SELECT Id FROM Files WHERE Task=\'" + idT.ToString() + "\'");
-            data = ByteAdd(data, StringToByte(sql.Length.ToString()));
+            object[] sql2 = SQL.getData("SELECT UserName FROM Tasks_Users WHERE Task=\'" + idT.ToString() + "\'");
+            data = ByteAdd(data, StringToByte(sql2.Length.ToString()));
 
-            sql = SQL.getData("SELECT UserName FROM Tasks_Users WHERE Task=\'" + idT.ToString() + "\'");
-            data = ByteAdd(data, StringToByte(sql.Length.ToString()));
+            data = ByteAdd(data, sql[4] == DBNull.Value ? StringToByte("0") : StringToByte(((long)sql[3]).ToString()));
+            data = ByteAdd(data, StringToByte(((int)sql[5]).ToString()));
+            data = ByteAdd(data, StringToByte(sql[6].ToString()));
+            data = ByteAdd(data, StringToByte(Convert.ToByte((bool)sql[7]).ToString()));
 
-            data = ByteAdd(data, tmpB);
+            sql2 = SQL.getData("SELECT TOP 1 [Users].[FIO], [History].[DateTime] FROM [History] INNER JOIN [Users] ON [History].[UserId]=[Users].[ID] WHERE [TaskId]=\'" + idT.ToString() + "\' ORDER BY [History].[DateTime]");
+            if (sql2 == null || sql2.Length != 1)
+            {
+                data = StringToByte("300");
+                SendMessage(tcp, data);
+                Program.log.WriteLine("Ошибка полученя сведений: " + idT.ToString(), true);
+                return;
+            }
+            sql2 = (object[])sql2[0];
+            data = ByteAdd(data, StringToByte((string)sql2[0]));
+            data = ByteAdd(data, StringToByte(((long)sql2[1]).ToString()));
+
+            sql2 = SQL.getData("SELECT TOP 1 [Users].[FIO], [History].[DateTime] FROM [History] INNER JOIN [Users] ON [History].[UserId]=[Users].[ID] WHERE [TaskId]=\'" + idT.ToString() + "\' ORDER BY [History].[DateTime] DESC");
+            if (sql2 == null || sql2.Length != 1)
+            {
+                data = StringToByte("300");
+                SendMessage(tcp, data);
+                Program.log.WriteLine("Ошибка полученя сведений: " + idT.ToString(), true);
+                return;
+            }
+            sql2 = (object[])sql2[0];
+            data = ByteAdd(data, StringToByte((string)sql2[0]));
+            data = ByteAdd(data, StringToByte(((long)sql2[1]).ToString()));
 
             SendMessage(tcp, data);
 
@@ -447,13 +479,26 @@ namespace Tasks_Server
             string desc = ByteToString(data); data = ByteCut(data);
             long ds = Convert.ToInt64(ByteToString(data)); data = ByteCut(data);
             long df = Convert.ToInt64(ByteToString(data)); data = ByteCut(data);
+            int type = Convert.ToInt32(ByteToString(data)); data = ByteCut(data);
+            string dire = ByteToString(data); data = ByteCut(data);
             long id = DateTime.Now.Ticks;
 
             int idU = Auth_Check(idC);
             if (Auth_SendError(tcp, idU))
                 return;
 
-            object sql = SQL.getData("INSERT INTO Tasks VALUES(\'" + id.ToString() + "\', NULL, \'" + name + "\', \'" + desc + "\', \'" + ds.ToString() + "\', \'" + df.ToString() + "\')");
+            #region Create events
+            Task_Add(idU, id);
+
+            Task_CheckName(true, idU, id, "", name);
+            Task_CheckDesc(true, idU, id, "", desc);
+            Task_CheckDateS(true, idU, id, 0, ds);
+            Task_CheckDateE(true, idU, id, 0, df);
+            Task_CheckDire(true, idU, id, "", dire);
+            Task_CheckType(true, idU, id, -1, type);
+            #endregion
+
+            object sql = SQL.getData("INSERT INTO [Tasks] VALUES(\'" + id.ToString() + "\', NULL, \'" + name + "\', \'" + desc + "\', \'" + ds.ToString() + "\', \'" + df.ToString() + "\',\'" + dire + "\',\'0\')");
             if (sql == null)
             {
                 data = StringToByte("300");
@@ -461,7 +506,7 @@ namespace Tasks_Server
             }
             else
             {
-                sql = SQL.getData("INSERT INTO Tasks_Users VALUES(\'" + id.ToString() + "\', \'" + idU.ToString() + "\')");
+                sql = SQL.getData("INSERT INTO Tasks_Users VALUES(\'" + id.ToString() + "\', \'" + idU.ToString() + "\', \'" + type.ToString() + "\')");
                 if (sql == null)
                 {
                     data = StringToByte("300");
@@ -489,12 +534,30 @@ namespace Tasks_Server
             string desc = ByteToString(data); data = ByteCut(data);
             long ds = Convert.ToInt64(ByteToString(data)); data = ByteCut(data);
             long df = Convert.ToInt64(ByteToString(data)); data = ByteCut(data);
+            int type = Convert.ToInt32(ByteToString(data)); data = ByteCut(data);
+            string dire = ByteToString(data); data = ByteCut(data);
 
             int idU = Auth_Check(idC);
             if (Auth_SendError(tcp, idU))
                 return;
 
-            object sql = SQL.getData("UPDATE Tasks SET Name=\'" + name + "\', Description=\'" + desc + "\', DateStart=\'" + ds.ToString() + "\', DateEnd=\'" + df.ToString() + "\' WHERE DateAdd=\'" + taskID.ToString() + "\'");
+            #region Create events
+            object[] current = SQL.getData("SELECT [Tasks].[Name],[Tasks].[Description],[Tasks].[DateStart],[Tasks].[DateEnd],[Tasks].[Direction],[Tasks_Users].[Type] FROM [Tasks] INNER JOIN [Tasks_Users] ON [Tasks].[DateAdd]=[Tasks_Users].[Task] WHERE [Tasks].[DateAdd]=\'" + taskID.ToString() + "\' AND [Tasks_Users].[UserName]=\'" + idU.ToString() + "\'");
+            if (current == null || current.Length != 1)
+            {
+                SendMessage(tcp, StringToByte("300"));
+                return;
+            }
+            current = (object[])current[0];
+            Task_CheckName(false, idU, taskID, (string)current[0], name);
+            Task_CheckDesc(false, idU, taskID, (string)current[1], desc);
+            Task_CheckDateS(false, idU, taskID, (long)current[2], ds);
+            Task_CheckDateE(false, idU, taskID, (long)current[3], df);
+            Task_CheckDire(false, idU, taskID, (string)current[4], dire);
+            Task_CheckType(false, idU, taskID, (int)current[5], type);
+            #endregion
+
+            object sql = SQL.getData("UPDATE [Tasks] SET [Name]=\'" + name + "\', [Description]=\'" + desc + "\', [DateStart]=\'" + ds.ToString() + "\', [DateEnd]=\'" + df.ToString() + "\', [Direction]=\'" + dire + "\' WHERE [DateAdd]=\'" + taskID.ToString() + "\'");
 
             if (sql == null)
             {
@@ -503,7 +566,15 @@ namespace Tasks_Server
             }
             else
             {
-                data = StringToByte("100");
+                sql = SQL.getData("UPDATE [Tasks_Users] SET [Type]=\'" + type.ToString() + "\' WHERE [Task]=\'" + taskID.ToString() + "\' AND [UserName]=\'" + idU.ToString() + "\'");
+
+                if (sql == null)
+                {
+                    data = StringToByte("300");
+                    Program.log.WriteLine("Не удалось обновить задачу: " + taskID.ToString(), true);
+                }
+                else
+                    data = StringToByte("100");
             }
             SendMessage(tcp, data);
 
@@ -522,6 +593,8 @@ namespace Tasks_Server
             if (Auth_SendError(tcp, idU))
                 return;
 
+            Task_Do(idU, idT);
+
             object sql = SQL.getData("UPDATE Tasks SET DateFinish=\'" + DateTime.Now.Ticks.ToString() + "\' WHERE DateAdd=\'" + idT.ToString() + "\'");
 
             if (sql == null)
@@ -538,6 +611,37 @@ namespace Tasks_Server
 
             sw.Stop();
             Program.log.WriteLine("Задача выполнена: " + idT.ToString() + "   [" + sw.ElapsedMilliseconds.ToString() + "]", false);
+        }
+        private void Task_UnDo(TcpClient tcp, byte[] data)
+        {
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+
+            long idC = Convert.ToInt64(ByteToString(data)); data = ByteCut(data);
+            long idT = Convert.ToInt64(ByteToString(data)); data = ByteCut(data);
+
+            int idU = Auth_Check(idC);
+            if (Auth_SendError(tcp, idU))
+                return;
+
+            Task_UnDo(idU, idT);
+
+            object sql = SQL.getData("UPDATE Tasks SET DateFinish=NULL WHERE DateAdd=\'" + idT.ToString() + "\'");
+
+            if (sql == null)
+            {
+                data = StringToByte("300");
+                Program.log.WriteLine("Не удалось убрать отметку выполнения: " + idT.ToString(), true);
+            }
+            else
+            {
+                data = StringToByte("100");
+            }
+
+            SendMessage(tcp, data);
+
+            sw.Stop();
+            Program.log.WriteLine("Задача отправлена в работу: " + idT.ToString() + "   [" + sw.ElapsedMilliseconds.ToString() + "]", false);
         }
         private void Task_List_Plan(TcpClient tcp, byte[] data)
         {
@@ -685,6 +789,147 @@ namespace Tasks_Server
             sw.Stop();
             Program.log.WriteLine("Формирование отчета: " + idU.ToString() + "   [" + sw.ElapsedMilliseconds.ToString() + "]", false);
         }
+        private void Task_Delete(TcpClient tcp, byte[] data)
+        {
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+
+            long idC = Convert.ToInt64(ByteToString(data)); data = ByteCut(data);
+            long idT = Convert.ToInt64(ByteToString(data)); data = ByteCut(data);
+
+            int idU = Auth_Check(idC);
+            if (Auth_SendError(tcp, idU))
+                return;
+
+            Task_Delete(idU, idT);
+
+            object sql = SQL.getData("UPDATE [Tasks] SET [Deleted]=\'1\' WHERE [DateAdd]=\'" + idT.ToString() + "\'");
+
+            if (sql == null)
+            {
+                data = StringToByte("300");
+                Program.log.WriteLine("Не удалось удалить задачу: " + idT.ToString(), true);
+            }
+            else
+            {
+                data = StringToByte("100");
+            }
+
+            SendMessage(tcp, data);
+
+            sw.Stop();
+            Program.log.WriteLine("Задача удалена: " + idT.ToString() + "   [" + sw.ElapsedMilliseconds.ToString() + "]", false);
+        }
+        private void Task_UnDelete(TcpClient tcp, byte[] data)
+        {
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+
+            long idC = Convert.ToInt64(ByteToString(data)); data = ByteCut(data);
+            long idT = Convert.ToInt64(ByteToString(data)); data = ByteCut(data);
+
+            int idU = Auth_Check(idC);
+            if (Auth_SendError(tcp, idU))
+                return;
+
+            Task_UnDelete(idU, idT);
+
+            object sql = SQL.getData("UPDATE [Tasks] SET [Deleted]=\'0\' WHERE DateAdd=\'" + idT.ToString() + "\'");
+
+            if (sql == null)
+            {
+                data = StringToByte("300");
+                Program.log.WriteLine("Не удалось поставить отметку выполнения: " + idT.ToString(), true);
+            }
+            else
+            {
+                data = StringToByte("100");
+            }
+
+            SendMessage(tcp, data);
+
+            sw.Stop();
+            Program.log.WriteLine("Задача выполнена: " + idT.ToString() + "   [" + sw.ElapsedMilliseconds.ToString() + "]", false);
+        }
+
+        private void Task_CheckName(bool isNew, int user, long task, string valueOld, string valueNew)
+        {
+            if (valueOld == valueNew)
+                return;
+
+            History_Add(user, task, 101, valueOld, valueNew, isNew);
+        }
+        private void Task_CheckDesc(bool isNew, int user, long task, string valueOld, string valueNew)
+        {
+            if (valueOld == valueNew)
+                return;
+
+            History_Add(user, task, 102, valueOld, valueNew, isNew);
+        }
+        private void Task_CheckDateS(bool isNew, int user, long task, long valueOld, long valueNew)
+        {
+            if (valueOld == valueNew)
+                return;
+
+            History_Add(user, task, 103, DateTimeToString(valueOld), DateTimeToString(valueNew), isNew);
+        }
+        private void Task_CheckDateE(bool isNew, int user, long task, long valueOld, long valueNew)
+        {
+            if (valueOld == valueNew)
+                return;
+
+            History_Add(user, task, 104, DateTimeToString(valueOld), DateTimeToString(valueNew), isNew);
+        }
+        private void Task_CheckDire(bool isNew, int user, long task, string valueOld, string valueNew)
+        {
+            if (valueOld == valueNew)
+                return;
+
+            History_Add(user, task, 105, valueOld, valueNew, isNew);
+        }
+        private void Task_CheckType(bool isNew, int user, long task, int valueOld, int valueNew)
+        {
+            if (valueOld == valueNew)
+                return;
+
+            string text1 = "";
+            if (valueOld == 0)
+                text1 = "Основная";
+            else if (valueOld == 1)
+                text1 = "Контроль";
+            string text2 = "";
+            if (valueNew == 0)
+                text2 = "Основная";
+            else if (valueNew == 1)
+                text2 = "Контроль";
+
+            History_Add(user, task, 106, text1, text2, isNew);
+        }
+
+        private void Task_Add(int user, long task)
+        {
+            History_Add(user, task, 111, "", "", false);
+        }
+        private void Task_Do(int user, long task)
+        {
+            History_Add(user, task, 112, "", "", false);
+        }
+        private void Task_UnDo(int user, long task)
+        {
+            History_Add(user, task, 113, "", "", false);
+        }
+        private void Task_Delete(int user, long task)
+        {
+            History_Add(user, task, 114, "", "", false);
+        }
+        private void Task_UnDelete(int user, long task)
+        {
+            History_Add(user, task, 115, "", "", false);
+        }
+        private void Task_Copy(int user, long task)
+        {
+            History_Add(user, task, 116, "", "", false);
+        }
         #endregion
 
         #region Steps
@@ -759,6 +1004,8 @@ namespace Tasks_Server
             if (Auth_SendError(tcp, idU))
                 return;
 
+            Step_Add(idU, idT, name);
+
             object sql = SQL.getData("INSERT INTO Steps VALUES (\'" + DateTime.Now.Ticks.ToString() + "\', NULL, \'" + idT.ToString() + "\', \'" + name + "\')");
 
             if (sql == null)
@@ -790,6 +1037,8 @@ namespace Tasks_Server
             int idU = Auth_Check(idC);
             if (Auth_SendError(tcp, idU))
                 return;
+
+            Step_Edit(idU, idS, name);
 
             object sql = SQL.getData("UPDATE Steps SET Name=\'" + name + "\' WHERE DateAdd=\'" + idS.ToString() + "\'");
 
@@ -840,6 +1089,48 @@ namespace Tasks_Server
 
             sw.Stop();
             Program.log.WriteLine("Выполнение шага: " + idS.ToString() + "   [" + sw.ElapsedMilliseconds.ToString() + "]", false);
+        }
+
+        private void Step_Add(int user, long task, string newV)
+        {
+            History_Add(user, task, 201, "", newV, false);
+        }
+        private void Step_Edit(int user, long step, string newV)
+        {
+            string oldV = ""; long task = -1;
+            object[] sql = SQL.getData("SELECT [Name], [Task] FROM [Steps] WHERE [DateAdd]=\'" + step.ToString() + "\'");
+            if (sql == null || sql.Length == 0)
+                return;
+
+            sql = (object[])sql[0];
+            newV = (string)sql[0];
+            task = (long)sql[1];
+
+            History_Add(user, task, 202, oldV, newV, false);
+        }
+        private void Step_Do(int user, long step)
+        {
+            long task = -1;
+            object[] sql = SQL.getData("SELECT [Task] FROM [Steps] WHERE [DateAdd]=\'" + step.ToString() + "\'");
+            if (sql == null || sql.Length == 0)
+                return;
+
+            sql = (object[])sql[0];
+            task = (long)sql[0];
+
+            History_Add(user, task, 203, "", "", false);
+        }
+        private void Step_UnDo(int user, long task)
+        {
+            History_Add(user, task, 204, "", "", false);
+        }
+        private void Step_Delete(int user, long task)
+        {
+            History_Add(user, task, 203, "", "", false);
+        }
+        private void Step_UnDelete(int user, long task)
+        {
+            History_Add(user, task, 204, "", "", false);
         }
         #endregion
 
@@ -894,6 +1185,8 @@ namespace Tasks_Server
             if (Auth_SendError(tcp, idU))
                 return;
 
+            Message_Add(idU, idT, message);
+
             object sql = SQL.getData("INSERT INTO Messages VALUES (\'" + idT.ToString() + "\', \'" + idU.ToString() + "\', \'" + DateTime.Now.Ticks.ToString() + "\', \'" + message + "\')");
 
             if (sql == null)
@@ -912,6 +1205,11 @@ namespace Tasks_Server
 
             sw.Stop();
             Program.log.WriteLine("Добавление сообщения к задаче: " + idT.ToString() + "   [" + sw.ElapsedMilliseconds.ToString() + "]", false);
+        }
+
+        private void Message_Add(int user, long task, string newV)
+        {
+            History_Add(user, task, 401, "", newV, false);
         }
         #endregion
 
@@ -998,7 +1296,9 @@ namespace Tasks_Server
             if (Auth_SendError(tcp, idU))
                 return;
 
-            object sql = SQL.getData("INSERT INTO Tasks_Users VALUES(\'" + idT.ToString() + "\', \'" + idA.ToString() + "\')");
+            Coop_Add(idU, idT, idA);
+
+            object sql = SQL.getData("INSERT INTO Tasks_Users VALUES(\'" + idT.ToString() + "\', \'" + idA.ToString() + "\', \'0\')");
 
             if (sql == null)
             {
@@ -1026,6 +1326,8 @@ namespace Tasks_Server
             if (Auth_SendError(tcp, idU))
                 return;
 
+            Coop_Delete(idU, idT, idD);
+
             object sql = SQL.getData("DELETE FROM Tasks_Users WHERE Task=\'" + idT.ToString() + "\' AND UserName=\'" + idD.ToString() + "\'");
 
             if (sql == null)
@@ -1041,6 +1343,116 @@ namespace Tasks_Server
             sw.Stop();
             Program.log.WriteLine("Удаление связи: " + idT.ToString() + " - " + idD.ToString() + "   [" + sw.ElapsedMilliseconds.ToString() + "]", false);
         }
+
+        private void Coop_Add(int user, long task, int idA)
+        {
+            object[] sql = SQL.getData("SELECT [FIO] FROM [Users] WHERE [ID]=\'" + idA.ToString() + "\'");
+            if (sql == null || sql.Length == 0)
+                return;
+
+            sql = (object[])sql[0];
+            string userName = (string)sql[0];
+
+            History_Add(user, task, 401, "", userName, false);
+        }
+        private void Coop_Delete(int user, long task, int idD)
+        {
+            object[] sql = SQL.getData("SELECT [FIO] FROM [Users] WHERE [ID]=\'" + idD.ToString() + "\'");
+            if (sql == null || sql.Length == 0)
+                return;
+
+            sql = (object[])sql[0];
+            string userName = (string)sql[0];
+
+            History_Add(user, task, 401, "", userName, false);
+        }
+        #endregion
+
+        #region History & Events
+        private void History_Add(int user, long task, int type, string valueOld, string valueNew, bool isNew)
+        {
+            if (valueOld == valueNew && valueNew != "" && valueOld != "")
+                return;
+
+            if (isNew == true)
+                type = -type;
+
+            SQL.getData("INSERT INTO [History] VALUES(\'" + task.ToString() + "\',\'" + user.ToString() + "\',\'" + DateTime.Now.Ticks.ToString() + "\',\'" + type.ToString() + "\',\'" + valueOld + "\',\'" + valueNew + "\')");
+
+            object[] sql = SQL.getData("SELECT [UserName] FROM [Tasks_Users] WHERE [Task]=\'" + task.ToString() + "\' AND [UserName]<>\'" + user.ToString() + "\'");
+            if (sql == null || sql.Length == 0)
+                return;
+            int userID = -1;
+            for (int i = 0; i < sql.Length; i++)
+            {
+                userID = (int)((object[])sql[i])[0];
+                SQL.getData("INSERT INTO [Events] VALUES(\'" + task.ToString() + "\',\'" + userID.ToString() + "\',\'" + user.ToString() + "\',\'" + DateTime.Now.Ticks.ToString() + "\',\'" + type.ToString() + "\',\'" + valueOld + "\',\'" + valueNew + "\',\'0\')");
+            }
+        }
+        private void Event_List(TcpClient tcp, byte[] data)
+        {
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+
+            long idC = Convert.ToInt64(ByteToString(data)); data = ByteCut(data);
+
+            int idU = Auth_Check(idC);
+            if (Auth_SendError(tcp, idU))
+                return;
+
+            object[] sql = SQL.getData("SELECT [Tasks].[Name], [Events].[Type], [Events].[DateTime], [Events].[OldV], [Events].[NewV] FROM [Events] INNER JOIN [Tasks] ON [Events].[TaskId]=[Tasks].[DateAdd] WHERE [Events].[UserId]=\'" + idU.ToString() + "\'");
+
+            data = StringToByte("100");
+            data = ByteAdd(data, StringToByte(sql.Length.ToString()));
+            for (int i = 0; i < sql.Length; i++)
+            {
+                object[] line = (object[])sql[i];
+                data = ByteAdd(data, StringToByte((string)line[0]));
+                data = ByteAdd(data, StringToByte((int)line[1]));
+                data = ByteAdd(data, StringToByte((long)line[2]));
+                data = ByteAdd(data, StringToByte((string)line[3]));
+                data = ByteAdd(data, StringToByte((string)line[4]));
+            }
+
+            SendMessage(tcp, data);
+
+            sw.Stop();
+            Program.log.WriteLine("Список событий для: " + idU.ToString() + "   [" + sw.ElapsedMilliseconds.ToString() + "]", false);
+        }
+        private void Event_Delete(TcpClient tcp, byte[] data)
+        {
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+
+            long idC = Convert.ToInt64(ByteToString(data)); data = ByteCut(data);
+            long idT = Convert.ToInt64(ByteToString(data)); data = ByteCut(data);
+
+            int idU = Auth_Check(idC);
+            if (Auth_SendError(tcp, idU))
+                return;
+
+            object[] sql = SQL.getData("DELETE FROM [Events] WHERE [TaskId]=\'" + idT.ToString() + "\' AND [UserId]=\'" + idU.ToString() + "\'");
+
+            SendMessage(tcp, StringToByte("100"));
+
+            sw.Stop();
+            Program.log.WriteLine("Удалено событие: " + idT.ToString() + "   [" + sw.ElapsedMilliseconds.ToString() + "]", false);
+        }
+
+        /* Event types:
+         * Tasks
+         * 101 - Name, 102 - Description, 103 - DateStart, 104 - DateEnd, 105 - Direction, 106 - Type
+         * 111 - Add, 112  - Do, 113 - UnDo, 114 - Delete, 115 - UnDelete, 116 - Copy)
+         * 
+         * Steps
+         * 201 - Add, 202 - Edit, 203 - Do, 204 - UnDo, 205 - Delete, 206 - UnDelete
+         * 
+         * Cooperation
+         * 301 - Add, 302 - Remove
+         * 
+         * Messages
+         * 401 - New
+        */
         #endregion
     }
 }
