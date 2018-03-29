@@ -393,5 +393,12 @@ namespace Tasks.Forms
         {
             MessageBox.Show("Функция находится в стадии разработки", "Информация", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
+
+        #region Administration
+        private void m_Main_AdminUsers(object Sender, EventArgs e)
+        {
+            new Forms.Administration.Users().ShowDialog();
+        }
+        #endregion
     }
 }

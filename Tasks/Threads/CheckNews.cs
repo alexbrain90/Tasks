@@ -15,18 +15,11 @@ namespace Tasks.Threads
         }
         static public void Stop()
         {
-            while (true)
+            try
             {
-                try
-                {
-                    mainThread.Abort();
-                    break;
-                }
-                catch
-                {
-                    Thread.Sleep(1000);
-                }
+                mainThread.Abort();
             }
+            catch { }
         }
 
         static private void ThreadFunc()
@@ -35,6 +28,9 @@ namespace Tasks.Threads
 
             while(true)
             {
+                if (Program.isExiting == true)
+                    return;
+
                 if (Connection.Connected == true && Config.user_ID == Config.user_IDMain)
                 {
                     try

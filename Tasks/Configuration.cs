@@ -42,6 +42,7 @@ namespace Tasks
         static public bool login_Auto = false;
         
         static public System.Drawing.Font fort_Main = new System.Drawing.Font("Arial", 10);
+        static public System.Drawing.Font fort_MainSmall = new System.Drawing.Font("Arial", 9);
 
         static public int form_Main_LocationX, form_Main_LocationY;
         static public int form_Main_SizeX, form_Main_SizeY;

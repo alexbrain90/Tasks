@@ -172,7 +172,7 @@ namespace Tasks.Forms
 
             gb_Coop.Controls.Add(l_CoopInfo = new Label());
             l_CoopInfo.Font = new Font(this.Font.FontFamily, 8f);
-            l_CoopInfo.Text = "Список связанным сотрудников";
+            l_CoopInfo.Text = "Список связанных сотрудников";
             l_CoopInfo.TextChanged += Label_AutoSize;
             gb_Coop.Controls.Add(lb_CoopList = new ListBox());
             lb_CoopList.HorizontalScrollbar = false;
@@ -280,6 +280,8 @@ namespace Tasks.Forms
             m_Main.MenuItems[4].MenuItems.Add("Помощь", m_Main_Empty);
             m_Main.MenuItems[4].MenuItems.Add("-");
             m_Main.MenuItems[4].MenuItems.Add("О программе", m_Main_Empty);
+            m_Main.MenuItems.Add("Администрирование"); m_Main.MenuItems[5].Visible = false;
+            m_Main.MenuItems[5].MenuItems.Add("Пользователи", m_Main_AdminUsers);
             this.Menu = m_Main;
 
             try
@@ -516,9 +518,6 @@ namespace Tasks.Forms
 
         private void b_AddTask_Click(object sender, EventArgs e)
         {
-            dt_Begin.Value = new DateTime(dt_Begin.Value.Year, dt_Begin.Value.Month, dt_Begin.Value.Day);
-            dt_End.Value = new DateTime(dt_End.Value.Year, dt_End.Value.Month, dt_End.Value.Day).AddDays(1).AddTicks(-1);
-
             saveTaskInfo(false);
 
             CurrentID = -1;
@@ -561,6 +560,9 @@ namespace Tasks.Forms
         }
         private void b_SaveTask_Click(object sender, EventArgs e)
         {
+            dt_Begin.Value = new DateTime(dt_Begin.Value.Year, dt_Begin.Value.Month, dt_Begin.Value.Day);
+            dt_End.Value = new DateTime(dt_End.Value.Year, dt_End.Value.Month, dt_End.Value.Day).AddDays(1).AddTicks(-1);
+
             if (tb_Name.Text == "" || tb_Description.Text == "")
             {
                 MessageBox.Show("Необходимо заполнить поля \"Наименование\" и \"Описание\"", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -589,7 +591,7 @@ namespace Tasks.Forms
         {
             if (b_DeleteTask.Text == "Удалить")
             {
-                DialogResult dr = MessageBox.Show("Вы действительно хотите удалить задачу \"" + (string)lb_Tasks.SelectedItem + "\" как выполненную?", "Удаление задачи", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                DialogResult dr = MessageBox.Show("Вы действительно хотите удалить задачу \"" + (string)lb_Tasks.SelectedItem + "\"?", "Удаление задачи", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (dr == DialogResult.Yes)
                 {
                     if (Network.Task_Delete(CurrentID) == false)
@@ -843,6 +845,11 @@ namespace Tasks.Forms
             }
 
             Main_Resize(this, null);
+
+            if (Config.user_IDMain == 0 || Config.user_IDMain == 1)
+                m_Main.MenuItems[5].Visible = true;
+            else
+                m_Main.MenuItems[5].Visible = false;
         }
         private void Main_FormClosing(object sender, FormClosingEventArgs e)
         {
@@ -865,7 +872,7 @@ namespace Tasks.Forms
         {
             Label label = (Label)sender;
             Graphics g = this.CreateGraphics();
-            label.Height = (int)g.MeasureString(label.Text, label.Font, label.Width).Height + 2;
+            label.Height = (int)g.MeasureString(label.Text, label.Font, label.Width).Height + 4;
         }
         private int SetTasksItemHeight()
         {

@@ -9,7 +9,7 @@ namespace Tasks_Server
     {
         private bool CheckVersion(string version)
         {
-            string[] list = new string[] { "0.10.0.41"};
+            string[] list = new string[] { "0.10.2.43", "0.10.1.42", "0.10.0.41"};
             for (int i = 0; i < list.Length; i++)
             {
                 if (list[i] == version)
@@ -63,7 +63,7 @@ namespace Tasks_Server
                 if (sql[1] == DBNull.Value || sql[1].ToString() == "9069CA78E7450A285173431B3E52C5C25299E473")
                 {
                     data = StringToByte("202");
-                    data = ByteAdd(data, StringToByte(Auth_New((int)sql[0]).ToString()));
+                    data = ByteAdd(data, StringToByte(Auth_New((int)sql[0], Name).ToString()));
                     data = ByteAdd(data, StringToByte(((int)sql[0]).ToString()));
                     SendMessage(tcp, data);
                     return;
@@ -72,7 +72,7 @@ namespace Tasks_Server
                 if (Hash == tmp)
                 {
                     data = StringToByte("200");
-                    data = ByteAdd(data, StringToByte(Auth_New((int)sql[0]).ToString()));
+                    data = ByteAdd(data, StringToByte(Auth_New((int)sql[0], Name).ToString()));
                     data = ByteAdd(data, StringToByte(sql[0].ToString()));
                     SendMessage(tcp, data);
 
@@ -203,12 +203,12 @@ namespace Tasks_Server
             m_Auth.ReleaseMutex();
             return result;
         }
-        private long Auth_New(int user)
+        private long Auth_New(int user, string name)
         {
             m_Auth.WaitOne(1000);
             long result = DateTime.Now.Ticks;
 
-            c_List.Add(new Connection { Id = result, LastConnect = result, UserId = user });
+            c_List.Add(new Connection { Id = result, LastConnect = result, UserId = user, UserName = name });
 
             m_Auth.ReleaseMutex();
             return result;
@@ -660,7 +660,7 @@ namespace Tasks_Server
             dt1 = new DateTime(ticks1);
             dt2 = new DateTime(ticks2);
 
-            object[] sql = SQL.getData("SELECT Tasks.DateAdd, Tasks.Description, Tasks.DateStart, Tasks.DateEnd FROM Tasks_Users INNER JOIN Tasks ON Tasks_Users.Task=Tasks.DateAdd WHERE Tasks_Users.UserName=\'" + idU.ToString() + "\' AND ((Tasks.DateStart>=\'" + dt1.Ticks.ToString() + "\' AND Tasks.DateStart<=\'" + dt2.Ticks.ToString() + "\') OR (Tasks.DateEnd >=\'" + dt1.Ticks.ToString() + "\' AND Tasks.DateEnd <=\'" + dt2.Ticks.ToString() + "\') OR (Tasks.DateStart <=\'" + dt1.Ticks.ToString() + "\' AND Tasks.DateEnd >=\'" + dt2.Ticks.ToString() + "\')) AND Tasks.DateAdd<=\'" + dt1.Ticks.ToString() + "\' ORDER BY Tasks.DateStart");
+            object[] sql = SQL.getData("SELECT Tasks.DateAdd, Tasks.Description, Tasks.DateStart, Tasks.DateEnd FROM Tasks_Users INNER JOIN Tasks ON Tasks_Users.Task=Tasks.DateAdd WHERE Tasks.Deleted=\'0\' AND Tasks_Users.UserName=\'" + idU.ToString() + "\' AND ((Tasks.DateStart>=\'" + dt1.Ticks.ToString() + "\' AND Tasks.DateStart<=\'" + dt2.Ticks.ToString() + "\') OR (Tasks.DateEnd >=\'" + dt1.Ticks.ToString() + "\' AND Tasks.DateEnd <=\'" + dt2.Ticks.ToString() + "\') OR (Tasks.DateStart <=\'" + dt1.Ticks.ToString() + "\' AND Tasks.DateEnd >=\'" + dt2.Ticks.ToString() + "\')) AND Tasks.DateAdd<=\'" + dt1.Ticks.ToString() + "\' ORDER BY Tasks.DateStart");
 
             data = StringToByte("100");
 
@@ -711,7 +711,7 @@ namespace Tasks_Server
             dt1 = new DateTime(ticks1);
             dt2 = new DateTime(ticks2);
 
-            object[] sql = SQL.getData("SELECT Tasks.DateAdd, Tasks.DateFinish, Tasks.Description, Tasks.DateStart, Tasks.DateEnd FROM Tasks_Users INNER JOIN Tasks ON Tasks_Users.Task=Tasks.DateAdd WHERE Tasks_Users.UserName=\'" + idU.ToString() + "\' AND ((Tasks.DateStart>=\'" + dt1.Ticks.ToString() + "\' AND Tasks.DateStart<=\'" + dt2.Ticks.ToString() + "\') OR (Tasks.DateEnd >=\'" + dt1.Ticks.ToString() + "\' AND Tasks.DateEnd <=\'" + dt2.Ticks.ToString() + "\') OR (Tasks.DateStart <=\'" + dt1.Ticks.ToString() + "\' AND Tasks.DateEnd >=\'" + dt2.Ticks.ToString() + "\')) ORDER BY Tasks.DateStart");
+            object[] sql = SQL.getData("SELECT Tasks.DateAdd, Tasks.DateFinish, Tasks.Description, Tasks.DateStart, Tasks.DateEnd FROM Tasks_Users INNER JOIN Tasks ON Tasks_Users.Task=Tasks.DateAdd WHERE Tasks.Deleted=\'0\' AND Tasks_Users.UserName=\'" + idU.ToString() + "\' AND ((Tasks.DateStart>=\'" + dt1.Ticks.ToString() + "\' AND Tasks.DateStart<=\'" + dt2.Ticks.ToString() + "\') OR (Tasks.DateEnd >=\'" + dt1.Ticks.ToString() + "\' AND Tasks.DateEnd <=\'" + dt2.Ticks.ToString() + "\') OR (Tasks.DateStart <=\'" + dt1.Ticks.ToString() + "\' AND Tasks.DateEnd >=\'" + dt2.Ticks.ToString() + "\')) ORDER BY Tasks.DateStart");
 
             data = StringToByte("100");
 
@@ -1400,7 +1400,7 @@ namespace Tasks_Server
             if (Auth_SendError(tcp, idU))
                 return;
 
-            object[] sql = SQL.getData("SELECT [Tasks].[Name], [Events].[Type], [Events].[DateTime], [Events].[OldV], [Events].[NewV] FROM [Events] INNER JOIN [Tasks] ON [Events].[TaskId]=[Tasks].[DateAdd] WHERE [Events].[UserId]=\'" + idU.ToString() + "\'");
+            object[] sql = SQL.getData("SELECT [Tasks].[Name], [Events].[Type], [Events].[DateTime], [Events].[OldV], [Events].[NewV] FROM [Events] INNER JOIN [Tasks] ON [Events].[TaskId]=[Tasks].[DateAdd] WHERE [Events].[UserId]=\'" + idU.ToString() + "\' AND [Events].[Showed]=\'0\'");
 
             data = StringToByte("100");
             data = ByteAdd(data, StringToByte(sql.Length.ToString()));
@@ -1415,6 +1415,8 @@ namespace Tasks_Server
             }
 
             SendMessage(tcp, data);
+
+            SQL.getData("UPDATE [Events] SET [Showed]='1' WHERE [UserId]=\'" + idU.ToString() + "\' AND [Showed]=\'0\'");
 
             sw.Stop();
             Program.log.WriteLine("Список событий для: " + idU.ToString() + "   [" + sw.ElapsedMilliseconds.ToString() + "]", false);
@@ -1453,6 +1455,46 @@ namespace Tasks_Server
          * Messages
          * 401 - New
         */
+        #endregion
+
+        #region Administration
+        private void Admin_Users(TcpClient tcp, byte[] data)
+        {
+            long idC = Convert.ToInt64(ByteToString(data)); data = ByteCut(data);
+            int type = Convert.ToInt32(ByteToString(data)); data = ByteCut(data);
+
+            int idU = Auth_Check(idC);
+            if (idU == -1)
+            {
+                SendMessage(tcp, StringToByte("300"));
+                return;
+            }
+
+            string command = "SELECT [FIO],[Sbe],[Post],[Version] FROM [Users]";
+            if (type == 0)
+                command += " ORDER BY [FIO]";
+            else if (type == 1)
+                command += " ORDER BY [Version]";
+            else if (type == 2)
+                command += " ORDER BY [Version] DESC";
+            else if (type == 3)
+                command += " WHERE [Password] IS NULL";
+
+            object[] sql = SQL.getData(command);
+
+            data = StringToByte("100");
+            data = ByteAdd(data, StringToByte(sql.Length.ToString()));
+            for (int i = 0; i < sql.Length; i++)
+            {
+                object[] line = (object[])sql[i];
+                data = ByteAdd(data, StringToByte((string)line[0]));
+                data = ByteAdd(data, StringToByte((string)line[1]));
+                data = ByteAdd(data, StringToByte((string)line[2]));
+                data = ByteAdd(data, StringToByte(line[3] == DBNull.Value ? "" : (string)line[3]));
+            }
+
+            SendMessage(tcp, data);
+        }
         #endregion
     }
 }

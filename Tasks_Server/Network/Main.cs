@@ -209,6 +209,16 @@ namespace Tasks_Server
                         }
                         #endregion
                         break;
+                    case 255:
+                        #region Administration
+                        switch (com[1])
+                        {
+                            case 0:
+                                Admin_Users(tcp, buf);
+                                break;
+                        }
+                        #endregion
+                        break;
                 }
 
 

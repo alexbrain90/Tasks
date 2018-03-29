@@ -8,7 +8,7 @@ namespace Tasks
         static private NotifyIcon tray_Icon = new NotifyIcon();
         static private ContextMenu cm_Tray = new ContextMenu();
         static private System.Threading.Thread t_Anim = new System.Threading.Thread(AnimFunc);
-        static private bool StatusNormal = false, StatusMiss = false, StatusNew = false, StatusError = true;
+        static private bool StatusNormal = true, StatusMiss = false, StatusNew = false, StatusError = true;
         static private int StatusMissCount = 0;
         static private Forms.Main f_Main;
 
@@ -26,6 +26,8 @@ namespace Tasks
             tray_Icon.MouseClick += tray_Click;
             tray_Icon.Visible = true;
             tray_Icon.Text = "Рабочие планы";
+
+            StatusNormal = true; StatusError = true;
 
             t_Anim.Start();
         }
@@ -93,7 +95,8 @@ namespace Tasks
         public static void SetStatusNormal()
         {
             if (StatusNormal == false && StatusError == true)
-                tray_Icon.ShowBalloonTip(5000, "Подключение", "Связь с сервером успешно восстановлена", ToolTipIcon.Info);
+                Threads.Popups.Add("Подключение", "Связь с сервером восстановлена", PopupType.ServerNormal);
+                //tray_Icon.ShowBalloonTip(5000, "Подключение", "Связь с сервером успешно восстановлена", ToolTipIcon.Info);
 
             StatusNormal = true;
             StatusError = false;
@@ -101,14 +104,16 @@ namespace Tasks
         public static void SetStatusError()
         {
             if (StatusNormal == true && StatusError == false)
-                tray_Icon.ShowBalloonTip(5000, "Подключение", "Потеряна связь с сервером", ToolTipIcon.Error);
+                Threads.Popups.Add("Подключение", "Потеряна связь с сервером", PopupType.ServerError);
+            //tray_Icon.ShowBalloonTip(5000, "Подключение", "Потеряна связь с сервером", ToolTipIcon.Error);
 
             StatusNormal = false;
             StatusError = true;
         }
         public static void SetStatusNew(string Text)
         {
-            tray_Icon.ShowBalloonTip(15000, "Новое событие", Text, ToolTipIcon.None);
+            //tray_Icon.ShowBalloonTip(15000, "Новое событие", Text, ToolTipIcon.None);
+            Threads.Popups.Add("Новое событие", Text, PopupType.NewEvent);
             StatusNew = true;
         }
         public static void UnSetStatusNew()
@@ -120,7 +125,8 @@ namespace Tasks
             if (Count != 0)
             {
                 if (StatusMissCount != Count)
-                    tray_Icon.ShowBalloonTip(15000, "Состояние", "Есть задачи (" + Count.ToString() + "), которые требуют вашего внимания:\r\n" + Text, ToolTipIcon.Info);
+                    Threads.Popups.Add("Уведомление", "Есть задачи (" + Count.ToString() + "), которые требуют вашего внимания:\r\n" + Text, PopupType.MissTask);
+                //tray_Icon.ShowBalloonTip(15000, "Состояние", "Есть задачи (" + Count.ToString() + "), которые требуют вашего внимания:\r\n" + Text, ToolTipIcon.Info);
                 StatusMiss = true;
             }
             else
@@ -133,7 +139,7 @@ namespace Tasks
         {
             cm_Tray.MenuItems[1].Visible = true;
             cm_Tray.MenuItems[2].Visible = true;
-            tray_Icon.ShowBalloonTip(10000, "Обновление", "Доступно обновление до версии: " + Config.ServerVersion, ToolTipIcon.None);
+            Threads.Popups.Add("Обновление", "Доступно обновление до версии: " + Config.ServerVersion, PopupType.Update, EventType.None);
         }
         public static void ShowBaloon(string Caption, string Text)
         {

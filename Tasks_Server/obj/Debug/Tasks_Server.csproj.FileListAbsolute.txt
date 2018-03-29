@@ -1,0 +1,9 @@
+E:\Cloud\Sync\Projects\Tasks\Tasks_Server\obj\Debug\Tasks_Server.Properties.Resources.resources
+E:\Cloud\Sync\Projects\Tasks\Tasks_Server\obj\Debug\Tasks_Server.csproj.GenerateResource.Cache
+E:\Cloud\Sync\Projects\Tasks\Tasks_Server\obj\Debug\Tasks_Server.csproj.CoreCompileInputs.cache
+E:\Cloud\Sync\Projects\Tasks\Tasks_Server\bin\Debug\Tasks_Server.exe.config
+E:\Cloud\Sync\Projects\Tasks\Tasks_Server\bin\Debug\Tasks_Server.exe
+E:\Cloud\Sync\Projects\Tasks\Tasks_Server\bin\Debug\Tasks_Server.pdb
+E:\Cloud\Sync\Projects\Tasks\Tasks_Server\obj\Debug\Tasks_Server.exe
+E:\Cloud\Sync\Projects\Tasks\Tasks_Server\obj\Debug\Tasks_Server.pdb
+E:\Cloud\Sync\Projects\Tasks\Tasks_Server\obj\Debug\Tasks_Server.csprojResolveAssemblyReference.cache

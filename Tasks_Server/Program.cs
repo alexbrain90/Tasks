@@ -85,5 +85,9 @@ namespace Tasks_Server
         /// Time of last connect
         /// </summary>
         public long LastConnect;
+        /// <summary>
+        /// Username
+        /// </summary>
+        public string UserName;
     }
 }

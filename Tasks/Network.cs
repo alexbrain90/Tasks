@@ -1052,6 +1052,41 @@ namespace Tasks
         }
         #endregion
 
+        #region Administration
+        static public string[,] Admin_User(int type)
+        {
+            string[,] result = new string[0, 0];
+
+            if (Threads.Connection.Connected == false)
+                return result;
+
+            try
+            {
+                TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                byte[] data = StringToByte(Config.UserConID.ToString());
+                data = ByteAdd(data, StringToByte(type.ToString()));
+
+                SendMessage(tcp, new byte[] { 255, 0 }, data);
+                data = RecieveMessage(tcp);
+
+                if (ByteToString(data) == "201")
+                    Config.UserConID = -1;
+                else if (ByteToString(data) == "100")
+                {
+                    data = ByteCut(data);
+                    int n = Convert.ToInt32(ByteToString(data)); data = ByteCut(data);
+                    result = GetList(n, 4, data);
+                }
+            }
+            catch
+            {
+                Config.UserConID = -1;
+            }
+
+            return result;
+        }
+        #endregion
+
         static private string[] GetList(int x, byte[] data)
         {
             string[] result = new string[x];

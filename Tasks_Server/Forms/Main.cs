@@ -39,7 +39,7 @@ namespace Tasks_Server.Forms
             for(int i = 0; i < Program.net.c_List.Count; i++)
             {
                 dt = new DateTime(Program.net.c_List[i].LastConnect);
-                lb_Con.Items.Add(dt.Year.ToString() + "." + dt.Month.ToString("00") + "." + dt.Day.ToString("00") + " - " + dt.Hour.ToString("00") + ":" + dt.Minute.ToString("00") + ":" + dt.Second.ToString("00") + "\t" + Program.net.c_List[i].UserId.ToString());
+                lb_Con.Items.Add(dt.Day.ToString("00") + "-" + dt.Hour.ToString("00") + ":" + dt.Minute.ToString("00") + "  " + Program.net.c_List[i].UserName);
             }
             lb_Con.EndUpdate();
 
@@ -62,10 +62,10 @@ namespace Tasks_Server.Forms
         private void Main_Resize(object sender, EventArgs e)
         {
             tb_Log.Location = new System.Drawing.Point(10, 10);
-            tb_Log.Size = new System.Drawing.Size(this.ClientSize.Width - 250, this.ClientSize.Height - 20);
+            tb_Log.Size = new System.Drawing.Size(this.ClientSize.Width - 350, this.ClientSize.Height - 20);
 
             lb_Con.Location = new System.Drawing.Point(tb_Log.Right + 10, tb_Log.Top);
-            lb_Con.Size = new System.Drawing.Size(220, tb_Log.Height);
+            lb_Con.Size = new System.Drawing.Size(320, tb_Log.Height);
         }
 
         private void Log_LogEvent(LogEventArgs e)

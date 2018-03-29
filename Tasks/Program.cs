@@ -20,32 +20,27 @@ namespace Tasks
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            Config.AppExecutable = Application.ExecutablePath; // use assembly instead
-            Config.CurrentVersion = Application.ProductVersion;
+            Config.AppExecutable = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            Config.CurrentVersion = typeof(Program).Assembly.GetName().Version.ToString();
 
-            if (Update.checkLaunch(args) == true)
-                return;
-
-            System.IO.FileStream fs;
-            try
-            {
-                fs = new System.IO.FileStream("lock.lck", System.IO.FileMode.Create, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
-            }
-            catch
+            if (System.Diagnostics.Process.GetProcessesByName(System.IO.Path.GetFileNameWithoutExtension(Config.AppExecutable)).Length != 1)
             {
                 MessageBox.Show("Уже запущена другая копия программы", "Задачи - ошибка запуска", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
+            if (Update.checkLaunch(args) == true)
+                return;
+
             clearReports();
-            Tray.InitTray();
             Config.ReadConfig();
             Config.ApplyConfig();
+            Tray.InitTray();
 
-            
             Threads.Connection.Start();
             Threads.CheckNews.Start();
-            new System.Threading.Thread(CheckUpdates).Start();
+            Threads.Popups.Start();
+            Threads.Update.Start();
 
             //if (args.Length == 1 && args[0] == "-a")
                 //Tray.ShowMainForm();
@@ -53,6 +48,8 @@ namespace Tasks
             Application.Run();
             isExiting = true;
 
+            Threads.Update.Stop();
+            Threads.Popups.Stop();
             Threads.CheckNews.Stop();
             Threads.Connection.Stop();
 
@@ -75,29 +72,6 @@ namespace Tasks
             }
             catch { }
         }
-
-        static private void CheckUpdates()
-        {
-            try
-            {
-                if (Tasks.Update.checkFiles() == false)
-                {
-                    Tray.ShowBaloon("Обновление", "Загружаются библиотеки для формирования отчетов");
-                    if (Tasks.Update.downloadFiles() == true)
-                        Tray.ShowBaloon("Обновление", "Библиотеки загружены. Теперь можно формировать отчеты");
-                    else
-                        Tray.ShowBaloon("Обновление", "Не удалось загрузить библиотеки. Формирование отчетов недоступно");
-                }
-
-                Tasks.Update.checkUpgrade();
-                if (Config.CurrentVersion != Config.ServerVersion)
-                {
-                    Tray.SetStatusUpdate();
-                }
-            }
-            catch { }
-        }
-
 
         #region Catch unhandled errors
         private static void UnhandledThreadException(object sender, System.Threading.ThreadExceptionEventArgs e)

@@ -26,8 +26,23 @@ namespace Tasks
                 // Проверяем необходимость обновления программы
                 if (Config.AppExecutable.Length >= 8 && Config.AppExecutable.Substring(Config.AppExecutable.Length - 8) == "_new.exe")
                 {
+                    string appName = Config.AppExecutable.Substring(0, Config.AppExecutable.Length - 8);
+                    appName = Path.GetFileNameWithoutExtension(appName);
                     // Ожидаем завершения предыдущей копии программы
-                    Thread.Sleep(15000);
+                    for (int i = 0; i < 10; i++)
+                    {
+                        if (Process.GetProcessesByName(appName).Length != 0)
+                            Thread.Sleep(1000);
+                    }
+                    try
+                    {
+                        foreach (Process process in Process.GetProcessesByName(appName))
+                            process.Kill();
+                    }
+                    catch
+                    {
+                        return true;
+                    }
                     // Заменяем файл приложения
                     File.Copy(Config.AppExecutable, Config.AppExecutable.Substring(0, Config.AppExecutable.Length - 8), true);
                     // Запускаем обновленную версию программы
@@ -205,6 +220,14 @@ namespace Tasks
             {
                 return false;
             }
+        }
+
+        static public void UpdateForm()
+        {
+            System.Windows.Forms.DialogResult dr = new Forms.Update().ShowDialog();
+            if (dr == System.Windows.Forms.DialogResult.Yes)
+                if (Tasks.Update.makeUpgrade(new string[0]) == true)
+                    System.Windows.Forms.Application.Exit();
         }
     }
 }
