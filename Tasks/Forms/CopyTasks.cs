@@ -97,7 +97,7 @@ namespace Tasks.Forms
             DateTime dt1 = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1); dt1 = dt1.AddMonths(-cb_From.SelectedIndex);
             DateTime dt2 = dt1.AddMonths(1).AddTicks(-1);
 
-            string[,] list = Network.Task_List(0, dt1.Ticks, dt2.Ticks, 0);
+            string[,] list = Network.Task_List(0, dt1.Ticks, dt2.Ticks, 0, -1, "%All%", "");
             lb_From.BeginUpdate();
             lb_From.Items.Clear();
             TaskIDs = new long[list.Length / 10];

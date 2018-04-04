@@ -333,34 +333,93 @@ namespace Tasks
 
             ClosedXML.Excel.XLWorkbook xL = new ClosedXML.Excel.XLWorkbook(fileName);
             string[,] list = Network.Task_List_Plan(dt1.Ticks, dt2.Ticks);
-            if (list.Length == 0)
+            string[] directions = Network.User_Directions();
+            if (list.Length == 0 || directions.Length == 0)
             {
                 System.Windows.Forms.MessageBox.Show("Нет задач для отображения в плане за указанный период", "Формирование плана", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information);
                 return;
             }
 
-            xL.Worksheet("План").Cell(1, 1).Value = "Рабочий план на " + Tools.DateTimeToString(dt1, "MMMM YYYY").ToUpper() + " года";
-            xL.Worksheet("План").Cell(2, 1).Value = Config.user_Fio;
-            xL.Worksheet("План").Cell(3, 1).Value = Config.user_Post;
+            
+            xL.Worksheet(1).Cell(1, 1).Value = "Рабочий план на " + Tools.DateTimeToString(dt1, "MMMM YYYY").ToUpper() + " года";
+            xL.Worksheet(1).Cell(2, 1).Value = Config.user_Fio;
+            xL.Worksheet(1).Cell(3, 1).Value = Config.user_Post;
 
-            int n = 0;
-            for (int i = 0; i < list.Length / 4; i++)
+            for (int d = 2; d < directions.Length + 2; d++)
             {
-                if (n != 0)
-                {
-                    xL.Worksheet("План").Row(5 + n).InsertRowsBelow(1);
-                    for (int j = 1; j <= 4; j++)
-                        xL.Worksheet("План").Cell(6 + n, j).Style = xL.Worksheet("План").Cell(5 + n, j).Style;
-                }
-                n++;
+                int line = 7;
+                int count = 1, tmpcount = 0;
 
-                xL.Worksheet("План").Cell(6 + i, 1).Value = (i + 1).ToString();
-                xL.Worksheet("План").Cell(6 + i, 2).Value = list[i, 0].Replace("%newline%", "\r\n");
-                xL.Worksheet("План").Cell(6 + i, 3).Value = "с " + Tools.DateToString(Convert.ToInt64(list[i, 1]), "D MMMMm") + "\r\nпо " + Tools.DateToString(Convert.ToInt64(list[i, 2]), "D MMMMm");
-                xL.Worksheet("План").Cell(6 + i, 4).Value = list[i, 3];
+                xL.Worksheet(1).CopyTo("Направление " + directions[d - 2]);
+                xL.Worksheet(d).Cell(1, 1).Value = "Рабочий план на " + Tools.DateTimeToString(dt1, "MMMM YYYY").ToUpper() + " года";
+                xL.Worksheet(d).Cell(2, 1).Value = Config.user_Fio + " (" + (directions[d - 2] == "" ? "Основное направление" : "Направление: " + directions[d - 2]) + ")";
+                xL.Worksheet(d).Cell(3, 1).Value = Config.user_Post;
+
+                for (int i = 0; i < list.Length / 6; i++)
+                {
+                    if (list[i, 4] != directions[d - 2] || list[i, 5] != "0")
+                        continue;
+
+                    if (count != 1)
+                    {
+                        xL.Worksheet(d).Row(line - 1).InsertRowsBelow(1);
+                        for (int j = 1; j <= 4; j++)
+                            xL.Worksheet(d).Cell(line, j).Style = xL.Worksheet(d).Cell(7, j).Style;
+                    }
+
+                    xL.Worksheet(d).Cell(line, 1).Value = count.ToString();
+                    xL.Worksheet(d).Cell(line, 2).Value = list[i, 0].Replace("%newline%", "\r\n");
+                    xL.Worksheet(d).Cell(line, 3).Value = "с " + Tools.DateToString(Convert.ToInt64(list[i, 1]), "D MMMMm") + "\r\nпо " + Tools.DateToString(Convert.ToInt64(list[i, 2]), "D MMMMm");
+                    xL.Worksheet(d).Cell(line, 4).Value = list[i, 3];
+                    count++;
+                    line++;
+                }
+
+                if (count != 1)
+                {
+                    xL.Worksheet(d).Row(line).InsertRowsBelow(2);
+                    xL.Worksheet(d).Row(5).CopyTo(xL.Worksheet(d).Row(line)); line++;
+                    xL.Worksheet(d).Row(7).CopyTo(xL.Worksheet(d).Row(line));
+                    for (int i = 0; i < 4; i++)
+                        xL.Worksheet(d).Cell(line, i + 1).Value = "";
+                    xL.Worksheet(d).Cell(line - 1, 1).Value = "Контроль";
+                }
+                else
+                    xL.Worksheet(d).Cell(line - 2, 1).Value = "Контроль";
+                tmpcount = count;
+
+                for (int i = 0; i < list.Length / 6; i++)
+                {
+                    if (list[i, 4] != directions[d - 2] || list[i, 5] != "1")
+                        continue;
+
+                    if (tmpcount != count)
+                    {
+                        xL.Worksheet(d).Row(line - 1).InsertRowsBelow(1);
+                        for (int j = 1; j <= 4; j++)
+                            xL.Worksheet(d).Cell(line, j).Style = xL.Worksheet(d).Cell(7, j).Style;
+                    }
+
+                    xL.Worksheet(d).Cell(line, 1).Value = count.ToString();
+                    xL.Worksheet(d).Cell(line, 2).Value = list[i, 0].Replace("%newline%", "\r\n");
+                    xL.Worksheet(d).Cell(line, 3).Value = "с " + Tools.DateToString(Convert.ToInt64(list[i, 1]), "D MMMMm") + "\r\nпо " + Tools.DateToString(Convert.ToInt64(list[i, 2]), "D MMMMm");
+                    xL.Worksheet(d).Cell(line, 4).Value = list[i, 3];
+                    line++;
+                    count++;
+                }
+
+                if (count == tmpcount)
+                {
+                    xL.Worksheet(d).Row(line - 1).Delete();
+                    xL.Worksheet(d).Row(line - 1).Delete();
+                    line -= 2;
+                }
+                line += 2;
+                xL.Worksheet(d).Cell(line, 1).Value = Tools.FioToShort(Config.user_Fio) + "     ____________________     ";
             }
 
-            xL.Worksheet("План").Cell(list.Length / 4 + 7, 1).Value = Tools.FioToShort(Config.user_Fio) + "     ____________________     ";
+            xL.Worksheet(1).Delete();
+            xL.Worksheet(1).Name = "Основное направление";
 
             xL.Save();
             System.Diagnostics.Process p = new System.Diagnostics.Process();
@@ -378,125 +437,225 @@ namespace Tasks
 
             ClosedXML.Excel.XLWorkbook xL = new ClosedXML.Excel.XLWorkbook(fileName);
             string[,] list = Network.Task_List_Report(dt1.Ticks, dt2.Ticks);
-            if (list.Length == 0)
+            string[] directions = Network.User_Directions();
+            if (list.Length == 0 || directions.Length == 0)
             {
                 System.Windows.Forms.MessageBox.Show("Нет задач для отображения в отчете за указанный период", "Формирование отчета", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information);
                 return;
             }
 
-            xL.Worksheet("Отчет").Cell(1, 1).Value = "Отчет по рабочему плану за " + Tools.DateTimeToString(dt1, "MMMM YYYY").ToUpper() + " года";
-            xL.Worksheet("Отчет").Cell(2, 1).Value = Config.user_Fio;
-            xL.Worksheet("Отчет").Cell(3, 1).Value = Config.user_Post;
-            int n = 0;
-            for (int i = 0; i < list.Length / 10; i++)
+            for (int d = 2; d < directions.Length + 2; d++)
             {
-                long taskA = Convert.ToInt64(list[i, 3]);
-                if (taskA >= dt1.Ticks)
-                    continue;
+                int line = 7;
+                int count = 1, tmpcount = 0;
 
-                if (n != 0)
-                {
-                    xL.Worksheet("Отчет").Row(5 + n).InsertRowsBelow(1);
-                    for (int j = 1; j <= 6; j++)
-                        xL.Worksheet("Отчет").Cell(6 + n, j).Style = xL.Worksheet("Отчет").Cell(5 + n, j).Style;
-                }
-                n++;
+                xL.Worksheet(1).CopyTo("Направление " + directions[d - 2]);
+                xL.Worksheet(d).Cell(1, 1).Value = "Отчет по рабочему плану за " + Tools.DateTimeToString(dt1, "MMMM YYYY").ToUpper() + " года";
+                xL.Worksheet(d).Cell(2, 1).Value = Config.user_Fio + " (" + (directions[d-2] == "" ? "Основное направление" : "Направление: " + directions[d-2]) + ")";
+                xL.Worksheet(d).Cell(3, 1).Value = Config.user_Post;
 
-                xL.Worksheet("Отчет").Cell(5 + n, 1).Value = n.ToString();
-                xL.Worksheet("Отчет").Cell(5 + n, 2).Value = list[i, 0].Replace("%newline%", "\r\n");
-                xL.Worksheet("Отчет").Cell(5 + n, 3).Value = "с " + Tools.DateToString(Convert.ToInt64(list[i, 1]), "D MMMMm") + "\r\nпо " + Tools.DateToString(Convert.ToInt64(list[i, 2]), "D MMMMm");
-                xL.Worksheet("Отчет").Cell(5 + n, 5).Value = list[i, 5];
+                // Основные задачи
+                for (int i = 0; i < list.Length / 12; i++)
+                {
+                    long taskA = Convert.ToInt64(list[i, 3]);
+                    if (taskA >= dt1.Ticks || list[i, 10] != directions[d - 2] || list[i, 11] != "0")
+                        continue;
 
-                string progress = "", progressCom = "";
-                long taskE = Convert.ToInt64(list[i, 2]), taskF = Convert.ToInt64(list[i, 4]);
-                if (taskF != 0)
-                    progress = "Выполнено" + "\r\n" + Tools.DateToString(taskF, "D MMMMm");
-                else if (list[i, 6] != "0")
-                {
-                    progress = "Завершено на " + list[i, 6] + "%";
-                    progressCom = "Выполнено:\r\n" + list[i, 7].Replace("%ns%", "\r\n") + "\r\n\r\nВ работе:\r\n" + list[i, 8].Replace("%ns%", "\r\n");
-                }
-                else if (taskE > DateTime.Now.Ticks)
-                    progress = "В работе";
-                else
-                    progress = "Не выполнено";
-                xL.Worksheet("Отчет").Cell(5 + n, 4).Value = progress;
-                if (progressCom != "")
-                {
-                    xL.Worksheet("Отчет").Cell(5 + n, 4).Comment.AddText(progressCom);
-                    xL.Worksheet("Отчет").Cell(5 + n, 4).Comment.Style.Alignment.SetAutomaticSize();
-                }
-
-                if (list[i, 9] != "")
-                {
-                    int k = list[i, 9].LastIndexOf("%nm%");
-                    if (k == -1)
-                        xL.Worksheet("Отчет").Cell(5 + n, 6).Value = list[i, 9];
-                    else
+                    if (count != 1)
                     {
-                        xL.Worksheet("Отчет").Cell(5 + n, 6).Value = list[i, 9].Substring(k + 4);
-                        xL.Worksheet("Отчет").Cell(5 + n, 6).Comment.AddText(list[i, 9].Replace("%nm%", "\r\n\r\n"));
-                        xL.Worksheet("Отчет").Cell(5 + n, 6).Comment.Style.Alignment.SetAutomaticSize();
+                        xL.Worksheet(d).Row(line - 1).InsertRowsBelow(1);
+                        for (int j = 1; j <= 6; j++)
+                            xL.Worksheet(d).Cell(line, j).Style = xL.Worksheet(d).Cell(7, j).Style;
                     }
+
+                    xL.Worksheet(d).Cell(line, 1).Value = count.ToString();
+                    xL.Worksheet(d).Cell(line, 2).Value = list[i, 0].Replace("%newline%", "\r\n");
+                    xL.Worksheet(d).Cell(line, 3).Value = "с " + Tools.DateToString(Convert.ToInt64(list[i, 1]), "D MMMMm") + "\r\nпо " + Tools.DateToString(Convert.ToInt64(list[i, 2]), "D MMMMm");
+                    xL.Worksheet(d).Cell(line, 5).Value = list[i, 5];
+
+                    string progress = "", progressCom = "";
+                    long taskE = Convert.ToInt64(list[i, 2]), taskF = Convert.ToInt64(list[i, 4]);
+                    if (taskF != 0)
+                        progress = "Выполнено" + "\r\n" + Tools.DateToString(taskF, "D MMMMm");
+                    else if (list[i, 6] != "0")
+                    {
+                        progress = "Завершено на " + list[i, 6] + "%";
+                        progressCom = "Выполнено:\r\n" + list[i, 7].Replace("%ns%", "\r\n") + "\r\n\r\nВ работе:\r\n" + list[i, 8].Replace("%ns%", "\r\n");
+                    }
+                    else if (taskE > DateTime.Now.Ticks)
+                        progress = "В работе";
+                    else
+                        progress = "Не выполнено";
+                    xL.Worksheet(d).Cell(line, 4).Value = progress;
+                    if (progressCom != "")
+                    {
+                        xL.Worksheet(d).Cell(line, 4).Comment.AddText(progressCom);
+                        xL.Worksheet(d).Cell(line, 4).Comment.Style.Alignment.SetAutomaticSize();
+                    }
+
+                    if (list[i, 9] != "")
+                    {
+                        int k = list[i, 9].LastIndexOf("%nm%");
+                        if (k == -1)
+                            xL.Worksheet(d).Cell(line, 6).Value = list[i, 9];
+                        else
+                        {
+                            xL.Worksheet(d).Cell(line, 6).Value = list[i, 9].Substring(k + 4);
+                            xL.Worksheet(d).Cell(line, 6).Comment.AddText(list[i, 9].Replace("%nm%", "\r\n\r\n"));
+                            xL.Worksheet(d).Cell(line, 6).Comment.Style.Alignment.SetAutomaticSize();
+                        }
+                    }
+                    count++;
+                    line++;
                 }
-            }
 
-            n++;
-            if (n == 1)
-                n++;
-            int nt = n;
-            for (int i = 0; i < list.Length / 10; i++)
-            {
-                long taskA = Convert.ToInt64(list[i, 3]);
-                if (taskA < dt1.Ticks)
-                    continue;
-
-                if (n != nt)
+                if (count != 1)
                 {
-                    xL.Worksheet("Отчет").Row(n + 5).InsertRowsBelow(1);
-                    for (int j = 1; j <= 5; j++)
-                        xL.Worksheet("Отчет").Cell(n + 6, j).Style = xL.Worksheet("Отчет").Cell(n + 5, j).Style;
-                }
-                n++;
-
-                xL.Worksheet("Отчет").Cell(n + 5, 1).Value = (i + 1).ToString();
-                xL.Worksheet("Отчет").Cell(n + 5, 2).Value = list[i, 0].Replace("%newline%", "\r\n");
-                xL.Worksheet("Отчет").Cell(n + 5, 3).Value = "с " + Tools.DateToString(Convert.ToInt64(list[i, 1]), "D MMMMm") + "\r\nпо " + Tools.DateToString(Convert.ToInt64(list[i, 2]), "D MMMMm");
-                xL.Worksheet("Отчет").Cell(n + 5, 5).Value = list[i, 5];
-
-                string progress = "", progressCom = "";
-                long taskE = Convert.ToInt64(list[i, 2]), taskF = Convert.ToInt64(list[i, 4]);
-                if (taskF != 0)
-                    progress = "Выполнено" + "\r\n" + Tools.DateToString(taskF, "D MMMMm");
-                else if (list[i, 6] != "0")
-                {
-                    progress = "Завершено на " + list[i, 6] + "%";
-                    progressCom = "Выполнено:\r\n" + list[i, 7].Replace("%ns%", "\r\n") + "\r\n\r\nВ работе:\r\n" + list[i, 8].Replace("%ns%", "\r\n");
+                    xL.Worksheet(d).Row(line).InsertRowsBelow(2);
+                    xL.Worksheet(d).Row(5).CopyTo(xL.Worksheet(d).Row(line)); line++;
+                    xL.Worksheet(d).Row(7).CopyTo(xL.Worksheet(d).Row(line));
+                    for (int i = 0; i < 6; i++)
+                        xL.Worksheet(d).Cell(line, i + 1).Value = "";
+                    xL.Worksheet(d).Cell(line - 1, 1).Value = "Дополнительные";
                 }
                 else
-                    progress = "Не выполнено";
-                xL.Worksheet("Отчет").Cell(n + 5, 4).Value = progress;
-                if (progressCom != "")
+                    xL.Worksheet(d).Cell(line - 1, 1).Value = "Дополнительные";
+                tmpcount = count;
+
+                // Дополнительные задачи
+                for (int i = 0; i < list.Length / 12; i++)
                 {
-                    xL.Worksheet("Отчет").Cell(5 + n, 4).Comment.AddText(progressCom);
-                    xL.Worksheet("Отчет").Cell(5 + n, 4).Comment.Style.Alignment.SetAutomaticSize();
+                    long taskA = Convert.ToInt64(list[i, 3]);
+                    if (taskA < dt1.Ticks || list[i, 10] != directions[d - 2] || list[i, 11] != "0")
+                        continue;
+
+                    if (count != tmpcount)
+                    {
+                        xL.Worksheet(d).Row(line).InsertRowsBelow(1);
+                        for (int j = 1; j <= 6; j++)
+                            xL.Worksheet(d).Cell(line, j).Style = xL.Worksheet(d).Cell(7, j).Style;
+                    }
+
+                    xL.Worksheet(d).Cell(line, 1).Value = count.ToString();
+                    xL.Worksheet(d).Cell(line, 2).Value = list[i, 0].Replace("%newline%", "\r\n");
+                    xL.Worksheet(d).Cell(line, 3).Value = "с " + Tools.DateToString(Convert.ToInt64(list[i, 1]), "D MMMMm") + "\r\nпо " + Tools.DateToString(Convert.ToInt64(list[i, 2]), "D MMMMm");
+                    xL.Worksheet(d).Cell(line, 5).Value = list[i, 5];
+
+                    string progress = "", progressCom = "";
+                    long taskE = Convert.ToInt64(list[i, 2]), taskF = Convert.ToInt64(list[i, 4]);
+                    if (taskF != 0)
+                        progress = "Выполнено" + "\r\n" + Tools.DateToString(taskF, "D MMMMm");
+                    else if (list[i, 6] != "0")
+                    {
+                        progress = "Завершено на " + list[i, 6] + "%";
+                        progressCom = "Выполнено:\r\n" + list[i, 7].Replace("%ns%", "\r\n") + "\r\n\r\nВ работе:\r\n" + list[i, 8].Replace("%ns%", "\r\n");
+                    }
+                    else
+                        progress = "Не выполнено";
+                    xL.Worksheet(d).Cell(line, 4).Value = progress;
+                    if (progressCom != "")
+                    {
+                        xL.Worksheet(d).Cell(line, 4).Comment.AddText(progressCom);
+                        xL.Worksheet(d).Cell(line, 4).Comment.Style.Alignment.SetAutomaticSize();
+                    }
+
+                    if (list[i, 9] != "")
+                    {
+                        int k = list[i, 9].LastIndexOf("%nm%");
+                        if (k == -1)
+                            xL.Worksheet(d).Cell(line, 6).Value = list[i, 9];
+                        else
+                        {
+                            xL.Worksheet(d).Cell(line, 6).Value = list[i, 9].Substring(k + 4);
+                            xL.Worksheet(d).Cell(line, 6).Comment.AddText(list[i, 9].Replace("%nm%", "\r\n\r\n"));
+                            xL.Worksheet(d).Cell(line, 6).Comment.Style.Alignment.SetAutomaticSize();
+                        }
+                    }
+
+                    line++;
+                    count++;
                 }
 
-                if (list[i, 9] != "")
+                if (count != tmpcount)
                 {
-                    int k = list[i, 9].LastIndexOf("%nm%");
-                    if (k == -1)
-                        xL.Worksheet("Отчет").Cell(5 + n, 6).Value = list[i, 9];
-                    else
-                    {
-                        xL.Worksheet("Отчет").Cell(5 + n, 6).Value = list[i, 9].Substring(k + 4);
-                        xL.Worksheet("Отчет").Cell(5 + n, 6).Comment.AddText(list[i, 9].Replace("%nm%", "\r\n\r\n"));
-                        xL.Worksheet("Отчет").Cell(5 + n, 6).Comment.Style.Alignment.SetAutomaticSize();
-                    }
+                    xL.Worksheet(d).Row(line).InsertRowsBelow(2);
+                    xL.Worksheet(d).Row(5).CopyTo(xL.Worksheet(d).Row(line)); line++;
+                    xL.Worksheet(d).Row(7).CopyTo(xL.Worksheet(d).Row(line));
+                    for (int i = 0; i < 6; i++)
+                        xL.Worksheet(d).Cell(line, i + 1).Value = "";
+                    xL.Worksheet(d).Cell(line - 1, 1).Value = "Контроль";
                 }
+                else if (count == 1)
+                    xL.Worksheet(d).Cell(line - 2, 1).Value = "Контроль";
+                else
+                    xL.Worksheet(d).Cell(line - 1, 1).Value = "Контроль";
+                tmpcount = count;
+
+                // Контроль
+                for (int i = 0; i < list.Length / 12; i++)
+                {
+                    if (list[i, 10] != directions[d - 2] || list[i, 11] != "1")
+                        continue;
+
+                    if (count != tmpcount)
+                    {
+                        xL.Worksheet(d).Row(line).InsertRowsBelow(1);
+                        for (int j = 1; j <= 6; j++)
+                            xL.Worksheet(d).Cell(line, j).Style = xL.Worksheet(d).Cell(7, j).Style;
+                    }
+
+                    xL.Worksheet(d).Cell(line, 1).Value = count.ToString();
+                    xL.Worksheet(d).Cell(line, 2).Value = list[i, 0].Replace("%newline%", "\r\n");
+                    xL.Worksheet(d).Cell(line, 3).Value = "с " + Tools.DateToString(Convert.ToInt64(list[i, 1]), "D MMMMm") + "\r\nпо " + Tools.DateToString(Convert.ToInt64(list[i, 2]), "D MMMMm");
+                    xL.Worksheet(d).Cell(line, 5).Value = list[i, 5];
+
+                    string progress = "", progressCom = "";
+                    long taskE = Convert.ToInt64(list[i, 2]), taskF = Convert.ToInt64(list[i, 4]);
+                    if (taskF != 0)
+                        progress = "Выполнено" + "\r\n" + Tools.DateToString(taskF, "D MMMMm");
+                    else if (list[i, 6] != "0")
+                    {
+                        progress = "Завершено на " + list[i, 6] + "%";
+                        progressCom = "Выполнено:\r\n" + list[i, 7].Replace("%ns%", "\r\n") + "\r\n\r\nВ работе:\r\n" + list[i, 8].Replace("%ns%", "\r\n");
+                    }
+                    else
+                        progress = "Не выполнено";
+                    xL.Worksheet(d).Cell(line, 4).Value = progress;
+                    if (progressCom != "")
+                    {
+                        xL.Worksheet(d).Cell(line, 4).Comment.AddText(progressCom);
+                        xL.Worksheet(d).Cell(line, 4).Comment.Style.Alignment.SetAutomaticSize();
+                    }
+
+                    if (list[i, 9] != "")
+                    {
+                        int k = list[i, 9].LastIndexOf("%nm%");
+                        if (k == -1)
+                            xL.Worksheet(d).Cell(line, 6).Value = list[i, 9];
+                        else
+                        {
+                            xL.Worksheet(d).Cell(line, 6).Value = list[i, 9].Substring(k + 4);
+                            xL.Worksheet(d).Cell(line, 6).Comment.AddText(list[i, 9].Replace("%nm%", "\r\n\r\n"));
+                            xL.Worksheet(d).Cell(line, 6).Comment.Style.Alignment.SetAutomaticSize();
+                        }
+                    }
+
+                    line++;
+                    count++;
+                }
+
+                if (count == tmpcount)
+                {
+                    xL.Worksheet(d).Row(line - 1).Delete();
+                    xL.Worksheet(d).Row(line - 1).Delete();
+                    line -= 2;
+                }
+                line += 2;
+                xL.Worksheet(d).Cell(line, 1).Value = Tools.FioToShort(Config.user_Fio) + "     ____________________     ";
             }
 
-            xL.Worksheet("Отчет").Cell(list.Length / 7 + 9, 1).Value = Tools.FioToShort(Config.user_Fio) + "     ____________________     ";
+            xL.Worksheet(1).Delete();
+            xL.Worksheet(1).Name = "Основное направление";
 
             xL.Save();
             System.Diagnostics.Process p = new System.Diagnostics.Process();

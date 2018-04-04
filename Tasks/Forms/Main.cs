@@ -10,7 +10,7 @@ namespace Tasks.Forms
         private MainMenu m_Main;
         private ToolTip tt_Main;
 
-        private GroupBox gb_Info, gb_Steps, gb_Coop, gb_Messages;
+        private GroupBox gb_Info, gb_Steps, gb_Coop, gb_Messages, gb_Personal;
 
         private Label l_Worker, l_Post, l_Sbe;
 
@@ -18,9 +18,9 @@ namespace Tasks.Forms
         private Label l_SortInfo;
         private ListBox lb_Tasks;
 
-        private TextBox tb_Name, tb_Description, tb_Direction;
+        private TextBox tb_Name, tb_Description, tb_Filter;
         private Label l_Info, l_NameInfo, l_DescriptionInfo, l_Dates, l_Direction, l_Type, l_PregressInfo, l_CoopInfo;
-        private ComboBox cb_Type;
+        private ComboBox cb_Type, cb_Direction;
         private DateTimePicker dt_Begin, dt_End;
         private ListBox lb_Progress, lb_CoopList;
         private Button b_DoTask, b_SaveTask, b_CancelTask, b_CopyTask, b_DeleteTask, b_History, b_AddStep, b_EditStep, b_DoStep, b_CoopShow;
@@ -46,7 +46,7 @@ namespace Tasks.Forms
             this.Paint += Main_Paint;
             this.FormClosing += Main_FormClosing;
             this.Icon = Tasks.Properties.Resources.icon_Main;
-            this.Font = Config.fort_Main;
+            this.Font = Config.font_Main;
             this.DoubleBuffered = true;
 
             tt_Main = new ToolTip();
@@ -71,6 +71,8 @@ namespace Tasks.Forms
             b_AddTask.Click += b_AddTask_Click;
             this.Controls.Add(l_SortInfo = new Label());
             l_SortInfo.TextChanged += Label_AutoSize;
+         this.Controls.Add(tb_Filter = new TextBox());
+         tb_Filter.TextChanged += this.tb_Filter_TextChanged;
 
             this.Controls.Add(lb_Tasks = new ListBox());
             lb_Tasks.Location = new Point(l_SortInfo.Left, l_SortInfo.Bottom + 10);
@@ -143,18 +145,21 @@ namespace Tasks.Forms
             gb_Info.Controls.Add(dt_End = new DateTimePicker());
             dt_End.ValueChanged += TaskInfo_Changed;
 
-            gb_Info.Controls.Add(l_Direction = new Label());
+            gb_Info.Controls.Add(gb_Personal = new GroupBox());
+            gb_Personal.Text = "Личные параметры";
+
+            gb_Personal.Controls.Add(l_Direction = new Label());
             l_Direction.Font = l_Post.Font;
             l_Direction.TextChanged += Label_AutoSize;
             l_Direction.Text = "Направление";
-            gb_Info.Controls.Add(tb_Direction = new TextBox());
-            tb_Direction.TextChanged += TaskInfo_Changed;
+            gb_Personal.Controls.Add(cb_Direction = new ComboBox());
+            cb_Direction.TextChanged += TaskInfo_Changed;
 
-            gb_Info.Controls.Add(l_Type = new Label());
+            gb_Personal.Controls.Add(l_Type = new Label());
             l_Type.Font = l_Post.Font;
             l_Type.TextChanged += Label_AutoSize;
             l_Type.Text = "Тип задачи";
-            gb_Info.Controls.Add(cb_Type = new ComboBox());
+            gb_Personal.Controls.Add(cb_Type = new ComboBox());
             cb_Type.DropDownStyle = ComboBoxStyle.DropDownList;
             cb_Type.Items.Add("Основная");
             cb_Type.Items.Add("Контроль");
@@ -269,7 +274,10 @@ namespace Tasks.Forms
             m_Main.MenuItems[1].MenuItems[5].MenuItems.Add("В работе", m_Main_Filter_InWork);
             m_Main.MenuItems[1].MenuItems[5].MenuItems.Add("Выполненные", m_Main_Filter_Ready);
             m_Main.MenuItems[1].MenuItems[5].MenuItems.Add("Удаленные", m_Main_Filter_Deleted);
-            m_Main.MenuItems.Add("Отчеты", m_Main_Empty);
+         m_Main.MenuItems[1].MenuItems.Add("Фильтр по направлению");
+         m_Main.MenuItems[1].MenuItems[6].MenuItems.Add("Без фильтра", m_Main_FilterDirection);
+         m_Main.MenuItems[1].MenuItems[6].MenuItems.Add("Основное направление", m_Main_FilterDirection);
+         m_Main.MenuItems.Add("Отчеты", m_Main_Empty);
             m_Main.MenuItems[2].MenuItems.Add("План на " + Tools.DateToString(dt1, "MMMM"), m_Main_Report_Plan);
             m_Main.MenuItems[2].MenuItems.Add("Отчет за " + Tools.DateToString(dt2, "MMMM"), m_Main_Report_Report);
             m_Main.MenuItems[2].MenuItems.Add("-");
@@ -311,7 +319,12 @@ namespace Tasks.Forms
             t_UpdateTasks.Tick += t_UpdateTasks_Tick;
         }
 
-        private void TaskInfo_Changed(object sender, EventArgs e)
+      private void tb_Filter_TextChanged(object sender, EventArgs e)
+      {
+         getTasksList();
+      }
+
+      private void TaskInfo_Changed(object sender, EventArgs e)
         {
             HaveChanges = true;
             b_SaveTask.Enabled = true;
@@ -529,7 +542,16 @@ namespace Tasks.Forms
             dt_Begin.Enabled = true;
             dt_End.Enabled = true;
             cb_Type.Enabled = true;
-            tb_Direction.Enabled = true;
+            cb_Direction.Enabled = true;
+
+         cb_Direction.Items.Clear();
+         foreach (string item in Network.User_Directions())
+         {
+            if (item != "")
+               cb_Direction.Items.Add(item);
+         }
+         if (filterDirection.StartsWith("%") == false)
+            cb_Direction.Text = filterDirection;
         }
         private void b_DoTask_Click(object sender, EventArgs e)
         {
@@ -576,7 +598,9 @@ namespace Tasks.Forms
 
             if (saveTaskInfo(false) == true)
                 getTasksList();
-        }
+         // Get list of directions
+         m_Main_UpdateDirections();
+      }
         private void b_CancelTask_Click(object sender, EventArgs e)
         {
             if (CurrentID != -1)
@@ -668,16 +692,18 @@ namespace Tasks.Forms
             #region Left panel
             l_Worker.Left = 10; l_Worker.Top = 10;
             l_Worker.Width = w; Label_AutoSize(l_Worker, null);
-            l_Post.Left = l_Worker.Left; l_Post.Top = l_Worker.Bottom + 4;
+            l_Post.Left = l_Worker.Left; l_Post.Top = l_Worker.Bottom;
             l_Post.Width = w; Label_AutoSize(l_Post, null);
-            l_Sbe.Left = l_Post.Left; l_Sbe.Top = l_Post.Bottom + 4;
+            l_Sbe.Left = l_Post.Left; l_Sbe.Top = l_Post.Bottom;
             l_Sbe.Width = w; Label_AutoSize(l_Sbe, null);
 
             b_AddTask.Left = l_Sbe.Left + (w - b_AddTask.Width) / 2; b_AddTask.Top = l_Sbe.Bottom + 10;
             l_SortInfo.Left = l_Sbe.Left; l_SortInfo.Top = b_AddTask.Bottom + 10;
             l_SortInfo.Width = w; Label_AutoSize(l_SortInfo, null);
+         tb_Filter.Left = l_SortInfo.Left; tb_Filter.Top = l_SortInfo.Bottom + 10;
+         tb_Filter.Width = w;
 
-            lb_Tasks.Left = l_SortInfo.Left; lb_Tasks.Top = l_SortInfo.Bottom + 10;
+            lb_Tasks.Left = tb_Filter.Left; lb_Tasks.Top = tb_Filter.Bottom + 4;
             lb_Tasks.Width = w; lb_Tasks.Height = this.ClientSize.Height - lb_Tasks.Top - 10;
             #endregion
             #region Top buttons
@@ -718,17 +744,19 @@ namespace Tasks.Forms
             dt_End.Left = dt_Begin.Left; dt_End.Top = dt_Begin.Bottom + 4;
             dt_End.Width = dt_Begin.Width;
 
-            l_Type.Left = l_Dates.Left; l_Type.Top = dt_End.Bottom + 10;
-            l_Type.Width = l_Dates.Width; Label_AutoSize(l_Type, null);
+            gb_Personal.Left = l_Dates.Left; gb_Personal.Top = dt_End.Bottom + 10;
+            gb_Personal.Width = l_Dates.Width;
+            l_Type.Left = 10; l_Type.Top = 20;
+            l_Type.Width = gb_Personal.Width - 20; Label_AutoSize(l_Type, null);
             cb_Type.Left = l_Type.Left; cb_Type.Top = l_Type.Bottom;
             cb_Type.Width = l_Type.Width;
-
             l_Direction.Left = l_Type.Left; l_Direction.Top = cb_Type.Bottom + 10;
             l_Direction.Width = l_Type.Width; Label_AutoSize(l_Direction, null);
-            tb_Direction.Left = l_Direction.Left; tb_Direction.Top = l_Direction.Bottom;
-            tb_Direction.Width = l_Direction.Width;
+            cb_Direction.Left = l_Direction.Left; cb_Direction.Top = l_Direction.Bottom;
+            cb_Direction.Width = l_Direction.Width;
+            gb_Personal.Height = cb_Direction.Bottom + 10;
 
-            l_Info.Left = l_Direction.Left; l_Info.Top = tb_Direction.Bottom + 20;
+            l_Info.Left = gb_Personal.Left; l_Info.Top = gb_Personal.Bottom + 20;
             l_Info.Width = l_Direction.Width; l_Info.Height = gb_Info.ClientSize.Height - l_Info.Top - 10;
             #endregion
             #region Steps
@@ -782,7 +810,10 @@ namespace Tasks.Forms
                 l_Sbe.Text = Config.user_Sbe;
             }
 
-            b_AddTask.Enabled = !Config.flag_ReadOnly;
+         // Get list of directions
+         m_Main_UpdateDirections();
+
+         b_AddTask.Enabled = !Config.flag_ReadOnly;
             m_Main.MenuItems[1].MenuItems[0].Enabled = !Config.flag_ReadOnly;
             m_Main.MenuItems[1].MenuItems[1].Enabled = !Config.flag_ReadOnly;
 
@@ -850,6 +881,8 @@ namespace Tasks.Forms
                 m_Main.MenuItems[5].Visible = true;
             else
                 m_Main.MenuItems[5].Visible = false;
+
+            //Tools.MakeReport(new DateTime(2018, 04, 01), new DateTime(2018, 04, 30));
         }
         private void Main_FormClosing(object sender, FormClosingEventArgs e)
         {
@@ -920,9 +953,7 @@ namespace Tasks.Forms
             long prevID = CurrentID;
             int n = -1;
 
-            Application.DoEvents();
-
-            string[,] list = Network.Task_List(filterStatus, filterB, filterE, sortId);
+            string[,] list = Network.Task_List(filterStatus, filterB, filterE, sortId, filterCoop, filterDirection, tb_Filter.Text);
 
             lb_Tasks.BeginUpdate();
             TasksID = new TaskInfo[list.Length / 10];
@@ -982,7 +1013,13 @@ namespace Tasks.Forms
             dt_Begin.Value = new DateTime(Convert.ToInt64(list[2]));
             dt_End.Value = new DateTime(Convert.ToInt64(list[3]));
             cb_Type.SelectedIndex = Convert.ToInt32(list[6]);
-            tb_Direction.Text = list[7];
+         cb_Direction.Items.Clear();
+         foreach (string item in Network.User_Directions())
+         {
+            if (item != "")
+               cb_Direction.Items.Add(item);
+         }
+         cb_Direction.Text = list[7];
             DateTime dtInfo = new DateTime(Convert.ToInt64(list[10]));
             list[9] = Tools.FioToShort(list[9]); list[11] = Tools.FioToShort(list[11]);
             l_Info.Text = "Автор:\r\n" + list[9] + " (" + dtInfo.Day.ToString("00") + "." + dtInfo.Month.ToString("00") + "." + dtInfo.Year.ToString("0000") + " - " + dtInfo.Hour.ToString("00") + ":" + dtInfo.Minute.ToString("00") + ")";
@@ -1118,7 +1155,7 @@ namespace Tasks.Forms
                     string Desc = tb_Description.Text.Replace("\r\n", "%newline%");
                     if (CurrentID == -1)
                     {
-                        CurrentID = Network.Task_Add(tb_Name.Text, Desc, dt_Begin.Value.Ticks, dt_End.Value.Ticks, cb_Type.SelectedIndex, tb_Direction.Text);
+                        CurrentID = Network.Task_Add(tb_Name.Text, Desc, dt_Begin.Value.Ticks, dt_End.Value.Ticks, cb_Type.SelectedIndex, cb_Direction.Text);
                         if (CurrentID == -1)
                         {
                             MessageBox.Show("Не удалось добавить новую задачу", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -1128,7 +1165,7 @@ namespace Tasks.Forms
                     }
                     else
                     {
-                        if (Network.Task_Edit(CurrentID, tb_Name.Text, Desc, dt_Begin.Value.Ticks, dt_End.Value.Ticks, cb_Type.SelectedIndex, tb_Direction.Text) == false)
+                        if (Network.Task_Edit(CurrentID, tb_Name.Text, Desc, dt_Begin.Value.Ticks, dt_End.Value.Ticks, cb_Type.SelectedIndex, cb_Direction.Text) == false)
                         {
                             MessageBox.Show("Не удалось обновить сведения о задаче", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                             return false;
@@ -1146,7 +1183,8 @@ namespace Tasks.Forms
             dt_Begin.Value = DateTime.Now;
             dt_End.Value = DateTime.Now;
             cb_Type.SelectedIndex = 0;
-            tb_Direction.Text = "";
+            cb_Direction.Text = "";
+         cb_Direction.Items.Clear();
 
             lb_Progress.Items.Clear();
             lb_CoopList.Items.Clear();
@@ -1173,7 +1211,7 @@ namespace Tasks.Forms
             dt_Begin.Enabled = false;
             dt_End.Enabled = false;
             cb_Type.Enabled = false;
-            tb_Direction.Enabled = false;
+            cb_Direction.Enabled = false;
 
             b_AddStep.Enabled = false;
             b_EditStep.Enabled = false;
@@ -1208,7 +1246,7 @@ namespace Tasks.Forms
                 dt_Begin.Enabled = true;
                 dt_End.Enabled = true;
                 cb_Type.Enabled = true;
-                tb_Direction.Enabled = true;
+                cb_Direction.Enabled = true;
             }
             if (value >= 2)
             {

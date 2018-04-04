@@ -95,6 +95,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DataTypes\EnumEventType.cs" />
+    <Compile Include="DataTypes\EnumFilters.cs" />
     <Compile Include="DataTypes\EnumPopupType.cs" />
     <Compile Include="DataTypes\StructPopupInfo.cs" />
     <Compile Include="Forms\Administration\Users.cs">
@@ -133,7 +134,7 @@
     <Compile Include="Forms\Step.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\Update\Update.cs">
+    <Compile Include="Update\Changelog.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Language.cs" />
@@ -146,7 +147,10 @@
     <Compile Include="Threads\Update.cs" />
     <Compile Include="Tools.cs" />
     <Compile Include="Tools\Ini.cs" />
-    <Compile Include="Tools\Update.cs" />
+    <Compile Include="Update\Progress.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Update\UpdateStatic.cs" />
     <Compile Include="Tray.cs" />
     <Compile Include="Configuration.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">

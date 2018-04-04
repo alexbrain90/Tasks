@@ -21,19 +21,20 @@ namespace Tasks.Forms
             this.Opacity = 0;
             this.StartPosition = FormStartPosition.Manual;
             this.ClientSize = new Size(300, 1);
-            this.Font = Config.fort_Main;
+            this.Font = Config.font_Main;
             this.Shown += Popup_Shown;
             this.FormClosing += Popup_FormClosing;
             this.Click += Popup_Click;
 
             this.Controls.Add(l_Caption = new Label());
-            l_Caption.Font = Config.fort_Main;
+            l_Caption.Font = Config.font_Main;
             l_Caption.Text = info.Caption + " - Рабочие планы";
             l_Caption.ForeColor = Color.White;
+            l_Caption.TextAlign = ContentAlignment.MiddleLeft;
             l_Caption.Click += Popup_Click;
 
             this.Controls.Add(l_Text = new Label());
-            l_Text.Font = Config.fort_MainSmall;
+            l_Text.Font = Config.font_MainSmall;
             l_Text.Text = info.Text;
             l_Text.Click += Popup_Click;
 
@@ -51,20 +52,20 @@ namespace Tasks.Forms
             {
                 case PopupType.Info:
                     this.BackColor = Color.LightCyan;
-                    timer.Interval = 5000;
+                    timer.Interval = 10000;
                     break;
 
                 case PopupType.MissTask:
                     this.BackColor = Color.LightSalmon;
-                    timer.Interval = 30000;
+                    timer.Interval = 60000;
                     break;
                 case PopupType.NearTask:
                     this.BackColor = Color.LightGoldenrodYellow;
-                    timer.Interval = 15000;
+                    timer.Interval = 20000;
                     break;
                 case PopupType.NewEvent:
                     this.BackColor = Color.LightGreen;
-                    timer.Interval = 5000;
+                    timer.Interval = 10000;
                     break;
 
                 case PopupType.Update:
@@ -81,7 +82,7 @@ namespace Tasks.Forms
                     break;
                 case PopupType.ServerNormal:
                     this.BackColor = Color.LightGray;
-                    timer.Interval = 5000;
+                    timer.Interval = 10000;
                     break;
             }
             l_Caption.BackColor = Color.FromArgb(this.BackColor.R / 2, this.BackColor.G / 2, this.BackColor.B / 2);
@@ -115,8 +116,15 @@ namespace Tasks.Forms
 
         private void b_Button1_Click(object sender, EventArgs e)
         {
-            if (info.Type == PopupType.Update)
-                Tasks.Update.UpdateForm();
+         if (info.Type == PopupType.Update)
+         {
+            DialogResult dr = new Tasks.Update.Changelog().ShowDialog();
+            if (dr == DialogResult.Yes)
+            {
+               new Tasks.Update.Progress(0).ShowDialog();
+               Application.Exit();
+            }
+         }
         }
         private void b_Button2_Click(object sender, EventArgs e)
         {

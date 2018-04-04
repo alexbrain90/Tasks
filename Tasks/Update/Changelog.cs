@@ -2,16 +2,18 @@
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace Tasks.Forms
+namespace Tasks.Update
 {
-    class Update:Form
+    class Changelog:Form
     {
         Label l_Current, l_Server;
         TextBox tb_Info;
         Button b_Update, b_Cancel;
 
-        public Update()
+        public Changelog()
         {
+            Functions.CheckVersion();
+
             this.Text = "Обновление";
             this.MaximizeBox = false;
             this.MinimizeBox = false;

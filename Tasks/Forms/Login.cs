@@ -18,7 +18,7 @@ namespace Tasks.Forms
 
         public Login()
         {
-            this.Font = Config.fort_Main;
+            this.Font = Config.font_Main;
             this.ShowInTaskbar = true;
             this.FormBorderStyle = FormBorderStyle.FixedToolWindow;
             this.MaximizeBox = false;
@@ -157,10 +157,11 @@ namespace Tasks.Forms
                     Config.ConfigFile.Save();
 
                     MessageBox.Show("Для дальнейшей работы необходимо выполнить обовление приложения до последней версии", "Ошибка авторизации", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    Tasks.Update.checkUpgrade();
-                    if (new Tasks.Forms.Update().ShowDialog() == DialogResult.Yes)
-                        if (Tasks.Update.makeUpgrade(new string[0]) == true)
-                            Application.Exit();
+               if (new Tasks.Update.Changelog().ShowDialog() == DialogResult.Yes)
+               {
+                  new Tasks.Update.Progress(0).ShowDialog();
+                  Application.Exit();
+               }
                     break;
                 case 0:
                     MessageBox.Show("Имя и/или пароль не распознаны", "Ошибка авторизации", MessageBoxButtons.OK, MessageBoxIcon.Error);

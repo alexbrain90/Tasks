@@ -41,8 +41,8 @@ namespace Tasks
         static public bool global_AutoStart = true;
         static public bool login_Auto = false;
         
-        static public System.Drawing.Font fort_Main = new System.Drawing.Font("Arial", 10);
-        static public System.Drawing.Font fort_MainSmall = new System.Drawing.Font("Arial", 9);
+        static public System.Drawing.Font font_Main = new System.Drawing.Font("Arial", 10);
+        static public System.Drawing.Font font_MainSmall = new System.Drawing.Font("Arial", 9);
 
         static public int form_Main_LocationX, form_Main_LocationY;
         static public int form_Main_SizeX, form_Main_SizeY;
@@ -62,7 +62,7 @@ namespace Tasks
         {
             if (global_AutoStart == true)
             {
-                Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Run", true).SetValue("Tasks", "\"" + Config.AppExecutable + "\"", RegistryValueKind.String);
+                Registry.CurrentUser.OpenSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Run", true).SetValue("Tasks", "\"" + Config.AppExecutable + "\" -a", RegistryValueKind.String);
             }
         }
         static public void WriteConfig()

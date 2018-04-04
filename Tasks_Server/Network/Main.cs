@@ -55,18 +55,20 @@ namespace Tasks_Server
             try
             {
                 TcpClient tcp = (TcpClient)obj;
+                Requests++;
 
                 byte[] buf = new byte[4];
-                tcp.Client.Receive(buf, 4, SocketFlags.None);
+                tcp.Client.Receive(buf, 4, SocketFlags.None); BytesR += 4;
 
                 byte[] com = new byte[2];
-                tcp.Client.Receive(com, 2, SocketFlags.None);
+                tcp.Client.Receive(com, 2, SocketFlags.None); BytesR += 2;
 
                 int len = BitConverter.ToInt32(buf, 0);
                 buf = new byte[len];
                 int n = 0;
                 while (n != len)
                     n += tcp.Client.Receive(buf, n, len - n, SocketFlags.None);
+                BytesR += len;
 
                 switch (com[0])
                 {
@@ -85,6 +87,9 @@ namespace Tasks_Server
                                 break;
                             case 3:
                                 User_Exit(tcp, buf);
+                                break;
+                            case 4:
+                                User_Directions(tcp, buf);
                                 break;
                         }
                         #endregion
@@ -239,7 +244,7 @@ namespace Tasks_Server
                 byte[] result = new byte[len.Length + data.Length];
                 len.CopyTo(result, 0);
                 data.CopyTo(result, 4);
-                tcp.Client.Send(result, result.Length, SocketFlags.None);
+                tcp.Client.Send(result, result.Length, SocketFlags.None); BytesS += result.Length;
                 return true;
             }
             catch

@@ -6,8 +6,12 @@ namespace Tasks_Server.Forms
     class Main : Form
     {
         TextBox tb_Log = new TextBox();
+        Label l_Info = new Label();
         ListBox lb_Con = new ListBox();
-        Timer t_Con = new Timer();
+        Timer t_Con = new Timer(), t_Info = new Timer();
+
+        private double BytesR = 0, BytesS = 0, Requests = 0;
+        private long TBytesR = 0, TBytesS = 0, TRequests = 0;
 
         public Main()
         {
@@ -25,10 +29,59 @@ namespace Tasks_Server.Forms
             t_Con.Interval = 10000;
             t_Con.Enabled = true;
 
+            this.Controls.Add(l_Info = new Label());
+            l_Info.Text = "";
+            t_Info.Tick += T_Info_Tick;
+            t_Info.Interval = 1000;
+            t_Info.Enabled = true;
+
             Program.log.LogEvent += Log_LogEvent;
             this.Resize += Main_Resize;
 
             Main_Resize(this, new EventArgs());
+        }
+
+        private void T_Info_Tick(object sender, EventArgs e)
+        {
+            Requests = CalcValue(Network.Requests, Requests, 1); TRequests += Network.Requests; Network.Requests = 0;
+             BytesR = CalcValue(Network.BytesR, BytesR, 0); TBytesR += Network.BytesR; Network.BytesR = 0;
+            BytesS = CalcValue(Network.BytesS, BytesS, 0); TBytesS += Network.BytesS; Network.BytesS = 0;
+
+            l_Info.Text = "Запросы: " + Requests.ToString() + "/с (" + TRequests.ToString() + ")\r\n" +
+                          "Получено: " + SizeToString((long)BytesR) + "/с (" + SizeToString(TBytesR) + ")\r\n" +
+                          "Отправлено: " + SizeToString((long)BytesS) + "/с (" + SizeToString(TBytesS) + ")";
+        }
+        private double CalcValue(double oldD, double newD, int d)
+        {
+            return Math.Round(oldD * 0.5 + newD * 0.5, d);
+        }
+        private string SizeToString(long size)
+        {
+            string[] add = new string[] { "Б", "КБ", "МБ", "ГБ" };
+            int n = 0;
+            double s = (double)size;
+            while (s >= 1000)
+            {
+                s /= 1024;
+                n++;
+            }
+
+            string r = "";
+            if (n == 0)
+                r = size.ToString();
+            else
+            {
+                if (s < 10)
+                    r = s.ToString("0.00");
+                else if (s < 100)
+                    r = s.ToString("00.0");
+                else
+                    r = s.ToString("000");
+            }
+
+            r += " " + add[n];
+
+            return r;
         }
 
         private void t_Con_Tick(object sender, EventArgs e)
@@ -65,22 +118,22 @@ namespace Tasks_Server.Forms
             tb_Log.Size = new System.Drawing.Size(this.ClientSize.Width - 350, this.ClientSize.Height - 20);
 
             lb_Con.Location = new System.Drawing.Point(tb_Log.Right + 10, tb_Log.Top);
-            lb_Con.Size = new System.Drawing.Size(320, tb_Log.Height);
+            lb_Con.Size = new System.Drawing.Size(320, tb_Log.Height / 3 * 2);
+
+            l_Info.Location = new System.Drawing.Point(lb_Con.Left, lb_Con.Bottom + 10);
+            l_Info.Size = new System.Drawing.Size(lb_Con.Width, this.ClientSize.Height - l_Info.Top - 10);
         }
 
         private void Log_LogEvent(LogEventArgs e)
         {
-            if (e.error == true || e.text.StartsWith("Успешная авторизация") || e.text.StartsWith("Выход из программы"))
-            {
-                string tmp = e.dateTime.Year.ToString("0000") + "." + e.dateTime.Month.ToString("00") + "." + e.dateTime.Day.ToString("00") + " - " + e.dateTime.Hour.ToString("00") + ":" + e.dateTime.Minute.ToString("00") + ":" + e.dateTime.Second.ToString("00") + "." + e.dateTime.Millisecond.ToString("000");
-                if (e.error == true)
-                    tmp += " ###\t";
-                else
-                    tmp += "\t";
-                tmp += e.text;
+            string tmp = e.dateTime.Year.ToString("0000") + "." + e.dateTime.Month.ToString("00") + "." + e.dateTime.Day.ToString("00") + " - " + e.dateTime.Hour.ToString("00") + ":" + e.dateTime.Minute.ToString("00") + ":" + e.dateTime.Second.ToString("00") + "." + e.dateTime.Millisecond.ToString("000");
+            if (e.error == true)
+                tmp += " ###\t";
+            else
+                tmp += "\t";
+            tmp += e.text;
 
-                tb_Log.Text = tmp + "\r\n" + tb_Log.Text;
-            }
+            tb_Log.Text = tmp + "\r\n" + tb_Log.Text;
         }
     }
 }

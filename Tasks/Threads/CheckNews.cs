@@ -47,7 +47,7 @@ namespace Tasks.Threads
         {
             int n = 0;
             string text = "";
-            string[,] list = Network.Task_List(1, 0, DateTime.Now.Ticks, 3);
+            string[,] list = Network.Task_List(1, 0, DateTime.Now.Ticks, 3, -1, "%All%", "");
             for(int i =0; i < list.Length / 10; i++)
             {
                 if (Convert.ToInt64(list[i, 4]) < DateTime.Now.Ticks)

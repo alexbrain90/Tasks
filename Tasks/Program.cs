@@ -18,10 +18,10 @@ namespace Tasks
 
             Control.CheckForIllegalCrossThreadCalls = false;
             Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
+            Application.SetCompatibleTextRenderingDefault(true);
 
-            Config.AppExecutable = System.Reflection.Assembly.GetExecutingAssembly().Location;
-            Config.CurrentVersion = typeof(Program).Assembly.GetName().Version.ToString();
+         Config.AppExecutable = Application.ExecutablePath;
+            Config.CurrentVersion = Application.ProductVersion;
 
             if (System.Diagnostics.Process.GetProcessesByName(System.IO.Path.GetFileNameWithoutExtension(Config.AppExecutable)).Length != 1)
             {
@@ -29,21 +29,21 @@ namespace Tasks
                 return;
             }
 
-            if (Update.checkLaunch(args) == true)
-                return;
+         if (Update.Functions.CheckLaunch() == true)
+         {
+            new Update.Progress(3).ShowDialog();
+            return;
+         }
 
             clearReports();
             Config.ReadConfig();
             Config.ApplyConfig();
-            Tray.InitTray();
+         Tray.InitTray();
 
-            Threads.Connection.Start();
+         Threads.Connection.Start();
             Threads.CheckNews.Start();
             Threads.Popups.Start();
             Threads.Update.Start();
-
-            //if (args.Length == 1 && args[0] == "-a")
-                //Tray.ShowMainForm();
 
             Application.Run();
             isExiting = true;
@@ -103,7 +103,7 @@ namespace Tasks
         private static void SendException()
         {
             foreach (string oneFile in System.IO.Directory.GetFiles(System.IO.Path.GetDirectoryName(Config.AppExecutable), "*.dump"))
-                Update.UploadDump(oneFile);
+                Update.Functions.UploadDump(oneFile);
         }
         #endregion
     }

@@ -59,6 +59,10 @@ namespace Tasks
         }
 
         #region Tools
+      static private byte[] ToByte(int value)
+      {
+         return StringToByte(value.ToString());
+      }
         static private byte[] StringToByte(string text)
         {
             byte[] data = System.Text.Encoding.UTF8.GetBytes(text);
@@ -131,7 +135,6 @@ namespace Tasks
                 string result = ByteToString(data); data = ByteCut(data);
                 if (result == "200" || result == "202")
                 {
-                    Tray.SetStatusNormal();
                     Config.UserConID = Convert.ToInt64(ByteToString(data)); data = ByteCut(data);
                     Config.user_ID = Convert.ToInt32(ByteToString(data));
                     Config.user_IDMain = Config.user_ID;
@@ -230,6 +233,40 @@ namespace Tasks
             }
             catch { }
         }
+        static public string[] User_Directions()
+        {
+            string[] result = new string[0];
+
+            if (Threads.Connection.Connected == false)
+                return result;
+
+            try
+            {
+                TcpClient tcp = new TcpClient(Config.ServerName, Config.ServerPort);
+                byte[] data = StringToByte(Config.UserConID.ToString());
+
+                SendMessage(tcp, new byte[] { 0, 4 }, data);
+                data = RecieveMessage(tcp);
+
+                if (ByteToString(data) == "201")
+                    Config.UserConID = -1;
+                else if (ByteToString(data) == "100")
+                {
+                    data = ByteCut(data);
+
+                    int n = Convert.ToInt32(ByteToString(data));
+                    data = ByteCut(data);
+
+                    result = GetList(n, data);
+                }
+            }
+            catch
+            {
+                Config.UserConID = -1;
+            }
+
+            return result;
+        }
         #endregion
 
         #region Tasks
@@ -241,7 +278,7 @@ namespace Tasks
         /// <param name="filterE">Конец интервала фильтра по дате</param>
         /// <param name="sortId">Сортировка</param>
         /// <returns></returns>
-        static public string[,] Task_List(int status, long filterB, long filterE, int sortId)
+        static public string[,] Task_List(int status, long filterB, long filterE, int sortId, int coop, string direction, string name)
         {
             string[,] result = new string[0, 0];
 
@@ -256,8 +293,11 @@ namespace Tasks
                 data = ByteAdd(data, StringToByte(filterB.ToString()));
                 data = ByteAdd(data, StringToByte(filterE.ToString()));
                 data = ByteAdd(data, StringToByte(sortId.ToString()));
+            data = ByteAdd(data, ToByte(coop));
+            data = ByteAdd(data, StringToByte(direction));
+            data = ByteAdd(data, StringToByte(name));
 
-                SendMessage(tcp, new byte[] { 2, 0 }, data);
+            SendMessage(tcp, new byte[] { 2, 0 }, data);
                 data = RecieveMessage(tcp);
 
                 if (ByteToString(data) == "201")
@@ -521,7 +561,7 @@ namespace Tasks
                     int n = Convert.ToInt32(ByteToString(data));
                     data = ByteCut(data);
 
-                    result = GetList(n, 4, data);
+                    result = GetList(n, 6, data);
                 }
                 else if (ByteToString(data) == "201")
                     Config.UserConID = -1;
@@ -556,7 +596,7 @@ namespace Tasks
                     int n = Convert.ToInt32(ByteToString(data));
                     data = ByteCut(data);
 
-                    result = GetList(n, 10, data);
+                    result = GetList(n, 12, data);
                 }
                 if (ByteToString(data) == "210")
                     Config.UserConID = -1;

@@ -6,6 +6,8 @@ namespace Tasks_Server
 {
     partial class Network
     {
+        static public int BytesR = 0, BytesS = 0, Requests = 0;
+
         static private byte[] StringToByte(string text)
         {
             byte[] data = System.Text.Encoding.UTF8.GetBytes(text);

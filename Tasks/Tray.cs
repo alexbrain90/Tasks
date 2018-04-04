@@ -27,7 +27,7 @@ namespace Tasks
             tray_Icon.Visible = true;
             tray_Icon.Text = "Рабочие планы";
 
-            StatusNormal = true; StatusError = true;
+            StatusNormal = true; StatusError = false;
 
             t_Anim.Start();
         }
@@ -40,7 +40,7 @@ namespace Tasks
 
         static public void ShowMainForm()
         {
-            tray_Open(new object(), new EventArgs());
+            tray_Open(tray_Icon, new EventArgs());
         }
         private static void tray_Click(object sender, MouseEventArgs e)
         {
@@ -69,10 +69,12 @@ namespace Tasks
         }
         private static void tray_Update(object sender, EventArgs e)
         {
-            DialogResult dr = new Forms.Update().ShowDialog();
-            if (dr == DialogResult.Yes)
-                if (Tasks.Update.makeUpgrade(new string[0]) == true)
-                    Application.Exit();
+            DialogResult dr = new Tasks.Update.Changelog().ShowDialog();
+         if (dr == DialogResult.Yes)
+         {
+            new Tasks.Update.Progress(0).ShowDialog();
+               Application.Exit();
+         }
         }
         private static void tray_Login(object sender, EventArgs e)
         {

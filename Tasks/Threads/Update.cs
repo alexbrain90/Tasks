@@ -27,16 +27,7 @@ namespace Tasks.Threads
             {
                 try
                 {
-                    if (Tasks.Update.checkFiles() == false)
-                    {
-                        Threads.Popups.Add("Обновление", "Загружаются библиотеки для формирования отчетов", PopupType.Info);
-                        if (Tasks.Update.downloadFiles() == true)
-                            Threads.Popups.Add("Обновление", "Библиотеки загружены. Теперь можно формировать отчеты", PopupType.Info);
-                        else
-                            Threads.Popups.Add("Обновление", "Не удалось загрузить библиотеки. Формирование отчетов недоступно", PopupType.Info);
-                    }
-
-                    Tasks.Update.checkUpgrade();
+                    Tasks.Update.Functions.CheckVersion();
                     if (Config.CurrentVersion != Config.ServerVersion)
                         Tray.SetStatusUpdate();
                 }
